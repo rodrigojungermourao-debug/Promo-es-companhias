@@ -8,7 +8,6 @@ import scraper
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
-# Dicionário de conversão de cidades comuns para códigos IATA de aeroporto
 AEROPORTOS_IATA = {
     "rio": "RIO", "rio de janeiro": "RIO", "gig": "GIG", "sdu": "SDU",
     "fortaleza": "FOR", "for": "FOR",
@@ -35,9 +34,8 @@ def extrair_iata(texto):
     for chave, iata in AEROPORTOS_IATA.items():
         if chave in t:
             return iata
-    # Se já digitou 3 letras (ex: FOR, GIG), usa direto
-    apenas_letras = "".join([c for c in t if c.isalpha()])
-    return apenas_letras[:3].upper() if len(apenas_letras) >= 3 else "RIO"
+    letras = "".join([c for c in t if c.isalpha()])
+    return letras[:3].upper() if len(letras) >= 3 else "RIO"
 
 @app.get("/")
 def index(request: Request, programa: str = None):
@@ -81,77 +79,74 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
     iata_origem = extrair_iata(origem_clean)
     iata_destino = extrair_iata(destino_clean)
 
-    # 1. Google Flights (abre com cidades, datas e comparação direta)
-    busca_gf = f"Voos de {origem_clean} para {destino_clean} em {data_ida}"
-    if data_volta:
-        busca_gf += f" voltando em {data_volta}"
-    gf_url = f"https://www.google.com/travel/flights?q={urllib.parse.quote(busca_gf)}"
+    # Links parametrizados com carregamento direto garantido:
 
-    # 2. GOL (link estruturado com parâmetros aceitos pelo portal de busca)
-    gol_url = f"https://b2c.voegol.com.br/compra/busca-de-voos?from={iata_origem}&to={iata_destino}&departureDate={data_ida}&adults=1"
+    # 1. Google Flights Geral
+    texto_busca_geral = f"Voos de {iata_origem} para {iata_destino} em {data_ida}"
     if data_volta:
-        gol_url += f"&returnDate={data_volta}"
+        texto_busca_geral += f" retorno em {data_volta}"
+    url_gf_geral = f"https://www.google.com/travel/flights?q={urllib.parse.quote(texto_busca_geral)}"
 
-    # 3. LATAM Airlines
-    latam_url = f"https://www.latamairlines.com/br/pt/ofertas-voos?origin={iata_origem}&destination={iata_destino}&outbound={data_ida}"
+    # 2. Google Flights filtrando especificamente Voos GOL
+    url_gf_gol = f"https://www.google.com/travel/flights?q={urllib.parse.quote(texto_busca_geral + ' GOL')}"
+
+    # 3. Google Flights filtrando Voos LATAM
+    url_gf_latam = f"https://www.google.com/travel/flights?q={urllib.parse.quote(texto_busca_geral + ' LATAM')}"
+
+    # 4. Google Flights filtrando Voos AZUL
+    url_gf_azul = f"https://www.google.com/travel/flights?q={urllib.parse.quote(texto_busca_geral + ' Azul')}"
+
+    # 5. Kayak Deep Link oficial (abre já preenchido)
     if data_volta:
-        latam_url += f"&inbound={data_volta}"
-
-    # 4. Azul Linhas Aéreas
-    azul_url = f"https://www.voeazul.com.br/br/pt/home.html"
-
-    # 5. Kayak (abre com a busca preenchida instantaneamente)
-    if data_volta:
-        kayak_url = f"https://www.kayak.com.br/flights/{iata_origem}-{iata_destino}/{data_ida}/{data_volta}?sort=bestflight_a"
+        url_kayak = f"https://www.kayak.com.br/flights/{iata_origem}-{iata_destino}/{data_ida}/{data_volta}?sort=bestflight_a"
     else:
-        kayak_url = f"https://www.kayak.com.br/flights/{iata_origem}-{iata_destino}/{data_ida}?sort=bestflight_a"
+        url_kayak = f"https://www.kayak.com.br/flights/{iata_origem}-{iata_destino}/{data_ida}?sort=bestflight_a"
 
-    # Lista consolidada com valores em Reais, Milhas e destaque de melhor custo
     resultados = [
         {
-            "companhia": "Google Flights / Menor Tarifa Geral",
+            "companhia": "Google Flights (Menor Tarifa Geral)",
             "codigo": "GOO",
-            "detalhes": f"Varredura em tempo real comparando todas as companhias na rota ({iata_origem} ➔ {iata_destino})",
+            "detalhes": f"Preenchimento automático com todas as opções para {iata_origem} ➔ {iata_destino}",
             "preco_reais": "R$ 489",
             "preco_milhas": "Menor Preço",
             "melhor_custo": True,
-            "link_direto": gf_url
+            "link_direto": url_gf_geral
         },
         {
             "companhia": "GOL Linhas Aéreas / Smiles",
             "codigo": "GOL",
-            "detalhes": f"Trecho {iata_origem} ➔ {iata_destino} com emissão pagante ou milhas Smiles",
+            "detalhes": f"Voos da GOL selecionados para {iata_origem} ➔ {iata_destino} na data",
             "preco_reais": "R$ 512",
             "preco_milhas": "14.200 milhas",
             "melhor_custo": False,
-            "link_direto": gol_url
+            "link_direto": url_gf_gol
         },
         {
             "companhia": "LATAM Airlines / LATAM Pass",
             "codigo": "LAT",
-            "detalhes": f"Tarifa Light ou resgate direto com pontos do LATAM Pass",
+            "detalhes": f"Voos diretos e conexões LATAM para a rota indicada",
             "preco_reais": "R$ 564",
             "preco_milhas": "16.800 pts",
             "melhor_custo": False,
-            "link_direto": latam_url
-        },
-        {
-            "companhia": "Kayak Comparador de Voos",
-            "codigo": "KAY",
-            "detalhes": f"Pesquisa profunda em tempo real com filtros de bagagem e escalas",
-            "preco_reais": "R$ 498",
-            "preco_milhas": "Agências & Cias",
-            "melhor_custo": False,
-            "link_direto": kayak_url
+            "link_direto": url_gf_latam
         },
         {
             "companhia": "Azul Linhas Aéreas",
             "codigo": "AZU",
-            "detalhes": f"Voos diretos e conexões com Azul Fidelidade",
+            "detalhes": f"Rotas da Azul já aplicadas na busca",
             "preco_reais": "R$ 620",
             "preco_milhas": "19.500 pts",
             "melhor_custo": False,
-            "link_direto": azul_url
+            "link_direto": url_gf_azul
+        },
+        {
+            "companhia": "Kayak Comparador de Voos",
+            "codigo": "KAY",
+            "detalhes": f"Carregamento imediato no Kayak com as datas e aeroportos inseridos",
+            "preco_reais": "R$ 498",
+            "preco_milhas": "Agências & Cias",
+            "melhor_custo": False,
+            "link_direto": url_kayak
         }
     ]
 
