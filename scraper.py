@@ -31,7 +31,10 @@ def extrair_imagem_real(url, headers):
 def coletar_promocoes():
     db = SessionLocal()
 
-   urls = [
+  def coletar_promocoes():
+    db = SessionLocal()
+
+    urls = [
         "https://www.melhoresdestinos.com.br/feed",
         "https://passageirodeprimeira.com/feed/?post_type=post",
         "https://www.melhorescartoes.com.br/feed",
@@ -42,7 +45,6 @@ def coletar_promocoes():
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }
-
     # Atualiza as promocoes que ja estao salvas no banco mas ainda estao sem imagem
     sem_foto = db.query(Promocao).filter((Promocao.imagem == None) | (Promocao.imagem == "")).all()
     for promo in sem_foto:
