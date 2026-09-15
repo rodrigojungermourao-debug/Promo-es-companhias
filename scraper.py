@@ -1,37 +1,4 @@
-import feedparser
-import requests
-from bs4 import BeautifulSoup
-from database import SessionLocal, Promocao
-
-def extrair_imagem_real(url, headers):
-    """Acessa a pagina da materia e pega a imagem oficial da capa (og:image)"""
-    try:
-        r = requests.get(url, headers=headers, timeout=5)
-        if r.status_code == 200:
-            soup = BeautifulSoup(r.text, "html.parser")
-            
-            # 1. Tenta a imagem principal de compartilhamento (Open Graph)
-            og_img = soup.find("meta", property="og:image")
-            if og_img and og_img.get("content"):
-                return og_img["content"]
-            
-            # 2. Tenta meta twitter:image
-            tw_img = soup.find("meta", attrs={"name": "twitter:image"})
-            if tw_img and tw_img.get("content"):
-                return tw_img["content"]
-                
-            # 3. Tenta imagem de destaque comum do WordPress
-            wp_img = soup.find("img", class_="wp-post-image")
-            if wp_img and wp_img.get("src"):
-                return wp_img["src"]
-    except Exception:
-        pass
-    return None
-
 def coletar_promocoes():
-    db = SessionLocal()
-
-  def coletar_promocoes():
     db = SessionLocal()
 
     urls = [
@@ -45,6 +12,7 @@ def coletar_promocoes():
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }
+
     # Atualiza as promocoes que ja estao salvas no banco mas ainda estao sem imagem
     sem_foto = db.query(Promocao).filter((Promocao.imagem == None) | (Promocao.imagem == "")).all()
     for promo in sem_foto:
@@ -53,57 +21,59 @@ def coletar_promocoes():
             promo.imagem = img
     db.commit()
 
-    total_novas = 0
+    # Termos padrao de milhas e cartoes
+    termos_milhas = ["livelo", "smiles", "esfera", "azul", "latam pass", "latam", "pontos", "milhas", "milheiro"]
+    termos_premmia_bonus = ["smiles", "azul", "milhas", "pontos", "bônus", "bonus", "transferência", "transferencia"]
 
     for url in urls:
         try:
-            resp = requests.get(url, headers=headers, timeout=10)
-            feed = feedparser.parse(resp.content)
-
+            feed = feedparser.parse(url)
             for entry in feed.entries:
-                titulo = getattr(entry, "title", "").strip()
-                link = getattr(entry, "link", "").strip()
-                if not titulo or not link:
-                    continue
+                titulo = entry.get("title", "")
+                link = entry.get("link", "")
+                descricao = entry.get("summary", "")
+                data_publicacao = entry.get("published", "")
 
-                titulo_lower = titulo.lower()
+                texto_completo = f"{titulo} {descricao}".lower()
 
-                programas = []
-                if "livelo" in titulo_lower:
-                    programas.append("Livelo")
-                if "smiles" in titulo_lower:
-                    programas.append("Smiles")
-                if "esfera" in titulo_lower:
-                    programas.append("Esfera")
-                if "azul" in titulo_lower or "tudoazul" in titulo_lower:
-                    programas.append("Azul")
-                if "latam" in titulo_lower:
-                    programas.append("LATAM Pass")
+                # Regra padrao de milhas
+                relevante_geral = any(t in texto_completo for t in termos_milhas)
 
-                if programas:
-                    programa_str = " / ".join(programas)
-                elif any(termo in titulo_lower for termo in ["milhas", "pontos", "bônus", "transferência", "cartão", "cashback"]):
-                    programa_str = "Geral"
-                else:
-                    continue
+                # Regra do Premmia: apenas se envolver milhas/transferencia
+                relevante_premmia = "premmia" in texto_completo and any(t in texto_completo for t in termos_premmia_bonus)
 
-                existe = db.query(Promocao).filter_by(titulo=titulo).first()
-                if not existe:
-                    # Busca a imagem oficial da pagina
-                    imagem_url = extrair_imagem_real(link, headers)
-                    nova_promo = Promocao(titulo=titulo, link=link, programa=programa_str, imagem=imagem_url)
-                    db.add(nova_promo)
-                    total_novas += 1
-                elif not existe.imagem:
-                    existe.imagem = extrair_imagem_real(link, headers)
+                if relevante_geral or relevante_premmia:
+                    # Identifica a tag do programa
+                    if "premmia" in texto_completo:
+                        programa = "Premmia"
+                    elif "livelo" in texto_completo:
+                        programa = "Livelo"
+                    elif "esfera" in texto_completo:
+                        programa = "Esfera"
+                    elif "smiles" in texto_completo:
+                        programa = "Smiles"
+                    elif "latam" in texto_completo:
+                        programa = "LATAM Pass"
+                    elif "azul" in texto_completo:
+                        programa = "Azul"
+                    else:
+                        programa = "Geral"
 
-            db.commit()
-        except Exception as e:
-            print(f"Erro ao ler feed {url}: {e}")
+                    # Salva no banco evitando duplicatas
+                    existe = db.query(Promocao).filter(Promocao.link == link).first()
+                    if not existe:
+                        imagem_capa = extrair_imagem_real(link, headers)
+                        nova = Promocao(
+                            titulo=titulo,
+                            link=link,
+                            descricao=descricao,
+                            data_publicacao=data_publicacao,
+                            programa=programa,
+                            imagem=imagem_capa
+                        )
+                        db.add(nova)
+                        db.commit()
+        except Exception:
+            continue
 
-    print(f"Coleta concluída! {total_novas} novas promoções salvas.")
     db.close()
-
-if __name__ == "__main__":
-    coletar_promocoes()
-    
