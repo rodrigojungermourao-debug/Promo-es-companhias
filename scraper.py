@@ -1,6 +1,51 @@
+import re
 import feedparser
 import requests
+from bs4 import BeautifulSoup
 from database import SessionLocal, Promocao
+
+def extrair_imagem(entry, headers):
+    # 1. Tenta media_content ou links do RSS
+    if "media_content" in entry and len(entry.media_content) > 0:
+        url = entry.media_content[0].get("url")
+        if url:
+            return url
+            
+    if "links" in entry:
+        for l in entry.links:
+            if "image" in l.get("type", ""):
+                return l.get("href")
+
+    # 2. Tenta extrair a tag <img> de dentro do resumo ou conteudo do post
+    conteudo_html = ""
+    if "content" in entry and len(entry.content) > 0:
+        conteudo_html = entry.content[0].value
+    elif "summary" in entry:
+        conteudo_html = entry.summary
+
+    if conteudo_html:
+        img_match = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', conteudo_html)
+        if img_match:
+            img_url = img_match.group(1)
+            # Evita ícones/trackers minúsculos de analytics
+            if not any(x in img_url.lower() for x in ["feedburner", "1x1", "pixel", "gravatar"]):
+                return img_url
+
+    # 3. Se ainda não achou, busca direto na meta og:image da página (com timeout curto)
+    try:
+        link = entry.get("link", "")
+        if link:
+            resp = requests.get(link, headers=headers, timeout=3)
+            if resp.status_code == 200:
+                soup = BeautifulSoup(resp.text, "html.parser")
+                meta = soup.find("meta", property="og:image")
+                if meta and meta.get("content"):
+                    return meta["content"]
+    except Exception:
+        pass
+
+    return None
+
 
 def coletar_promocoes():
     db = SessionLocal()
@@ -25,19 +70,10 @@ def coletar_promocoes():
         "cartão", "cartao", "bônus", "bonus", "transferência", "transferencia"
     ]
 
-    total_novas = 0
-
     for url in urls:
         try:
-            print(f"[SCRAPER] Lendo feed: {url}")
-            resp = requests.get(url, headers=headers, timeout=10)
-            
-            if resp.status_code == 200:
-                feed = feedparser.parse(resp.content)
-            else:
-                feed = feedparser.parse(url)
-
-            print(f"[SCRAPER] Itens encontrados em {url}: {len(feed.entries)}")
+            resp = requests.get(url, headers=headers, timeout=8)
+            feed = feedparser.parse(resp.content if resp.status_code == 200 else url)
 
             for entry in feed.entries:
                 titulo = entry.get("title", "").strip()
@@ -66,19 +102,11 @@ def coletar_promocoes():
                 else:
                     programa = "Geral"
 
-                # Evita duplicatas
-                existe = db.query(Promocao).filter(Promocao.link == link).first()
-                if not existe:
-                    imagem = None
-                    if "media_content" in entry and len(entry.media_content) > 0:
-                        imagem = entry.media_content[0].get("url")
-                    elif "links" in entry:
-                        for l in entry.links:
-                            if "image" in l.get("type", ""):
-                                imagem = l.get("href")
-                                break
+                promo = db.query(Promocao).filter(Promocao.link == link).first()
 
-                    # Apenas os campos confirmados da tabela
+                # Se não existir, cadastra já buscando a imagem
+                if not promo:
+                    imagem = extrair_imagem(entry, headers)
                     nova = Promocao(
                         titulo=titulo,
                         link=link,
@@ -87,12 +115,16 @@ def coletar_promocoes():
                     )
                     db.add(nova)
                     db.commit()
-                    total_novas += 1
+                # Se já existe mas ficou sem foto antes, atualiza a imagem
+                elif not promo.imagem:
+                    imagem = extrair_imagem(entry, headers)
+                    if imagem:
+                        promo.imagem = imagem
+                        db.commit()
 
         except Exception as e:
-            print(f"[SCRAPER ERROR] Falha ao processar {url}: {e}")
+            print(f"[SCRAPER ERROR] {url}: {e}")
             continue
 
-    print(f"[SCRAPER] Total de novas promoções inseridas com sucesso: {total_novas}")
     db.close()
     
