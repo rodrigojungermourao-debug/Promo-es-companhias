@@ -14,71 +14,93 @@ def coletar_promocoes():
     ]
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
     }
 
-    termos_milhas = ["livelo", "smiles", "esfera", "azul", "latam pass", "latam", "pontos", "milhas", "milheiro", "tudoazul"]
-    termos_premmia_bonus = ["smiles", "azul", "milhas", "pontos", "bônus", "bonus", "transferência", "transferencia"]
+    # Termos abrangentes de milhas, cartões e passagens aéreas
+    termos_busca = [
+        "milhas", "pontos", "milheiro", "livelo", "esfera", "smiles", 
+        "latam", "latam pass", "azul", "tudoazul", "gol", "tap",
+        "passagens", "passagem", "voos", "voo", "aéreo", "aerea",
+        "cartão", "cartao", "bônus", "bonus", "transferência", "transferencia"
+    ]
+
+    total_novas = 0
 
     for url in urls:
         try:
-            resp = requests.get(url, headers=headers, timeout=5)
+            print(f"[SCRAPER] Lendo feed: {url}")
+            resp = requests.get(url, headers=headers, timeout=10)
+            
             if resp.status_code == 200:
                 feed = feedparser.parse(resp.content)
             else:
                 feed = feedparser.parse(url)
 
+            print(f"[SCRAPER] Itens encontrados em {url}: {len(feed.entries)}")
+
             for entry in feed.entries:
-                titulo = entry.get("title", "")
-                link = entry.get("link", "")
-                descricao = entry.get("summary", "")
+                titulo = entry.get("title", "").strip()
+                link = entry.get("link", "").strip()
+                descricao = entry.get("summary", "").strip()
                 data_publicacao = entry.get("published", "")
+
+                if not titulo or not link:
+                    continue
 
                 texto = f"{titulo} {descricao}".lower()
 
-                relevante_geral = any(t in texto for t in termos_milhas)
-                relevante_premmia = "premmia" in texto and any(t in texto for t in termos_premmia_bonus)
+                # Regra do Premmia: apenas se envolver milhas ou pontos
+                if "premmia" in texto:
+                    if not any(t in texto for t in ["smiles", "azul", "milhas", "pontos", "bônus", "bonus", "transferência"]):
+                        continue
+                    programa = "Premmia"
+                elif "livelo" in texto:
+                    programa = "Livelo"
+                elif "esfera" in texto:
+                    programa = "Esfera"
+                elif "smiles" in texto:
+                    programa = "Smiles"
+                elif "latam" in texto:
+                    programa = "LATAM Pass"
+                elif "azul" in texto or "tudoazul" in texto:
+                    programa = "Azul"
+                elif any(t in texto for t in termos_busca):
+                    programa = "Geral"
+                else:
+                    # Se for feed especializado de milhas/viagens, aceita como Geral
+                    programa = "Geral"
 
-                if relevante_geral or relevante_premmia:
-                    if "premmia" in texto:
-                        programa = "Premmia"
-                    elif "livelo" in texto:
-                        programa = "Livelo"
-                    elif "esfera" in texto:
-                        programa = "Esfera"
-                    elif "smiles" in texto:
-                        programa = "Smiles"
-                    elif "latam" in texto:
-                        programa = "LATAM Pass"
-                    elif "azul" in texto or "tudoazul" in texto:
-                        programa = "Azul"
-                    else:
-                        programa = "Geral"
+                # Evita duplicidade
+                existe = db.query(Promocao).filter(Promocao.link == link).first()
+                if not existe:
+                    # Pega a imagem do feed se existir
+                    imagem = None
+                    if "media_content" in entry and len(entry.media_content) > 0:
+                        imagem = entry.media_content[0].get("url")
+                    elif "links" in entry:
+                        for l in entry.links:
+                            if "image" in l.get("type", ""):
+                                imagem = l.get("href")
+                                break
 
-                    existe = db.query(Promocao).filter(Promocao.link == link).first()
-                    if not existe:
-                        # Extrai imagem diretamente do feed (rápido e sem requisição extra)
-                        imagem = None
-                        if "media_content" in entry and len(entry.media_content) > 0:
-                            imagem = entry.media_content[0].get("url")
-                        elif "links" in entry:
-                            for l in entry.links:
-                                if "image" in l.get("type", ""):
-                                    imagem = l.get("href")
-                                    break
+                    nova = Promocao(
+                        titulo=titulo,
+                        link=link,
+                        descricao=descricao[:300] if descricao else "",
+                        data_publicacao=data_publicacao,
+                        programa=programa,
+                        imagem=imagem
+                    )
+                    db.add(nova)
+                    db.commit()
+                    total_novas += 1
 
-                        nova = Promocao(
-                            titulo=titulo,
-                            link=link,
-                            descricao=descricao,
-                            data_publicacao=data_publicacao,
-                            programa=programa,
-                            imagem=imagem
-                        )
-                        db.add(nova)
-                        db.commit()
-        except Exception:
+        except Exception as e:
+            print(f"[SCRAPER ERROR] Falha ao processar {url}: {e}")
             continue
 
+    print(f"[SCRAPER] Total de novas promoções inseridas: {total_novas}")
     db.close()
     
