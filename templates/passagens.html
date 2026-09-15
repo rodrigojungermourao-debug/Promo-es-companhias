@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscador de Voos - RadarMilhas</title>
+    <title>Comparador de Voos (R$ & Milhas) - RadarMilhas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
@@ -27,20 +27,20 @@
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-10 flex-1 w-full">
-        <!-- Caixa de Busca Estilo Skyscanner/Decolar -->
-        <div class="bg-white rounded-3xl p-6 shadow-xl border border-slate-200/80 mb-10">
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-1 w-full">
+        <!-- Caixa de Busca -->
+        <div class="bg-white rounded-3xl p-6 shadow-xl border border-slate-200/80 mb-8">
             <h1 class="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
                 <i class="fa-solid fa-magnifying-glass text-orange-500"></i> Encontre os voos mais baratos
             </h1>
 
             <form action="/passagens/buscar" method="GET" class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
                 
-                <!-- Origem e Destino com botão de inverter -->
+                <!-- Origem e Destino -->
                 <div class="lg:col-span-6 relative flex flex-col sm:flex-row items-center gap-2">
                     <div class="w-full border border-slate-300 rounded-2xl px-4 py-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200 bg-white transition">
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Origem</label>
-                        <input type="text" name="origem" value="{{ origem or 'Rio de Janeiro (RIO)' }}" placeholder="Ex: RIO, SAO, BSB" required
+                        <input type="text" name="origem" value="{{ origem }}" placeholder="Digite a cidade ou aeroporto" required
                                class="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none">
                     </div>
 
@@ -50,26 +50,26 @@
 
                     <div class="w-full border border-slate-300 rounded-2xl px-4 py-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200 bg-white transition">
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Destino</label>
-                        <input type="text" name="destino" value="{{ destino or 'Montevidéu (MVD)' }}" placeholder="Ex: MVD, MIA, BUE" required
+                        <input type="text" name="destino" value="{{ destino }}" placeholder="Para onde você quer ir?" required
                                class="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none">
                     </div>
                 </div>
 
-                <!-- Datas de Ida e Volta -->
+                <!-- Datas -->
                 <div class="lg:col-span-4 border border-slate-300 rounded-2xl p-2 bg-white flex items-center divide-x divide-slate-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200 transition">
                     <div class="w-1/2 px-3 py-0.5">
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ida</label>
-                        <input type="date" name="data_ida" value="{{ data_ida or '2026-11-26' }}" required
+                        <input type="date" name="data_ida" value="{{ data_ida }}" required
                                class="w-full bg-transparent text-xs font-semibold text-slate-800 outline-none">
                     </div>
                     <div class="w-1/2 px-3 py-0.5">
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Volta</label>
-                        <input type="date" name="data_volta" value="{{ data_volta or '2026-11-29' }}"
+                        <input type="date" name="data_volta" value="{{ data_volta }}"
                                class="w-full bg-transparent text-xs font-semibold text-slate-800 outline-none">
                     </div>
                 </div>
 
-                <!-- Botão de Ação Laranja -->
+                <!-- Botão de Ação -->
                 <div class="lg:col-span-2">
                     <button type="submit" class="w-full h-14 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold text-base rounded-2xl shadow-lg shadow-orange-500/30 active:scale-[0.98] transition flex items-center justify-center gap-2">
                         <span>Buscar voos</span>
@@ -83,26 +83,30 @@
         <!-- Resultados da Busca -->
         {% if buscou %}
         <div class="space-y-4">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <h2 class="text-lg font-black text-slate-900">
                     Melhores tarifas encontradas para: <span class="text-orange-600">{{ origem }} ➔ {{ destino }}</span>
                 </h2>
-                <span class="text-xs font-semibold text-slate-400">Datas: {{ data_ida }} {% if data_volta %}até {{ data_volta }}{% endif %}</span>
+                <span class="text-xs font-semibold text-slate-500 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+                    Ida: {{ data_ida }} {% if data_volta %}| Volta: {{ data_volta }}{% endif %}
+                </span>
             </div>
 
             <div class="space-y-3">
                 {% for voo in resultados %}
-                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="bg-white rounded-2xl border {% if voo.melhor_custo %}border-emerald-400 ring-2 ring-emerald-400/20{% else %}border-slate-200{% endif %} p-5 shadow-sm hover:shadow-md transition flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    
+                    <!-- Companhia e Selo -->
                     <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center font-black text-sm text-slate-700">
-                            {{ voo.companhia[:3].upper() }}
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center font-black text-sm text-slate-700 shrink-0">
+                            {{ voo.codigo }}
                         </div>
                         <div>
-                            <div class="flex items-center gap-2">
+                            <div class="flex flex-wrap items-center gap-2">
                                 <span class="font-extrabold text-base text-slate-900">{{ voo.companhia }}</span>
-                                {% if voo.vale_a_pena %}
-                                <span class="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
-                                    <i class="fa-solid fa-fire text-amber-300"></i> VALE A PENA
+                                {% if voo.melhor_custo %}
+                                <span class="bg-emerald-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm uppercase tracking-wide">
+                                    <i class="fa-solid fa-trophy text-amber-300"></i> MELHOR CUSTO-BENEFÍCIO
                                 </span>
                                 {% endif %}
                             </div>
@@ -110,16 +114,23 @@
                         </div>
                     </div>
 
+                    <!-- Preços em Reais e Milhas + Botão -->
                     <div class="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 pt-3 md:pt-0">
                         <div class="text-right">
                             <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">A partir de</span>
-                            <span class="text-2xl font-black text-slate-900">{{ voo.preco }}</span>
+                            <div class="flex items-baseline justify-end gap-2">
+                                <span class="text-xl font-black text-slate-900">{{ voo.preco_reais }}</span>
+                                <span class="text-xs font-bold text-slate-400">ou</span>
+                                <span class="text-sm font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{{ voo.preco_milhas }}</span>
+                            </div>
                         </div>
-                        <a href="{{ voo.link_direto }}" target="_blank" class="bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm px-5 py-3 rounded-xl shadow-md shadow-orange-500/20 active:scale-95 transition flex items-center gap-2">
+
+                        <a href="{{ voo.link_direto }}" target="_blank" class="bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm px-5 py-3 rounded-xl shadow-md shadow-orange-500/20 active:scale-95 transition flex items-center gap-2 shrink-0">
                             <span>Ver Voo</span>
                             <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
                         </a>
                     </div>
+
                 </div>
                 {% endfor %}
             </div>
