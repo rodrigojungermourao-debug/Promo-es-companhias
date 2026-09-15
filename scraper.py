@@ -5,7 +5,7 @@ from database import SessionLocal, Promocao
 
 def extrair_imagem_real(url, headers):
     try:
-        resp = requests.get(url, headers=headers, timeout=5)
+        resp = requests.get(url, headers=headers, timeout=4)
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.text, 'html.parser')
             meta_img = soup.find("meta", property="og:image")
@@ -31,27 +31,21 @@ def coletar_promocoes():
     ]
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     }
 
-    # Atualiza as promocoes que ja estao salvas no banco mas ainda estao sem imagem
-    try:
-        sem_foto = db.query(Promocao).filter((Promocao.imagem == None) | (Promocao.imagem == "")).all()
-        for promo in sem_foto:
-            img = extrair_imagem_real(promo.link, headers)
-            if img:
-                promo.imagem = img
-        db.commit()
-    except Exception:
-        pass
-
-    # Termos padrao de milhas e cartoes
     termos_milhas = ["livelo", "smiles", "esfera", "azul", "latam pass", "latam", "pontos", "milhas", "milheiro"]
     termos_premmia_bonus = ["smiles", "azul", "milhas", "pontos", "bônus", "bonus", "transferência", "transferencia"]
 
     for url in urls:
         try:
-            feed = feedparser.parse(url)
+            # Baixa com requests usando headers do Chrome para nao ser bloqueado
+            response = requests.get(url, headers=headers, timeout=6)
+            if response.status_code != 200:
+                continue
+            
+            feed = feedparser.parse(response.content)
+            
             for entry in feed.entries:
                 titulo = entry.get("title", "")
                 link = entry.get("link", "")
@@ -60,10 +54,7 @@ def coletar_promocoes():
 
                 texto_completo = f"{titulo} {descricao}".lower()
 
-                # Regra padrao de milhas
                 relevante_geral = any(t in texto_completo for t in termos_milhas)
-
-                # Regra do Premmia: apenas se envolver milhas/transferencia
                 relevante_premmia = "premmia" in texto_completo and any(t in texto_completo for t in termos_premmia_bonus)
 
                 if relevante_geral or relevante_premmia:
@@ -84,7 +75,20 @@ def coletar_promocoes():
 
                     existe = db.query(Promocao).filter(Promocao.link == link).first()
                     if not existe:
-                        imagem_capa = extrair_imagem_real(link, headers)
+                        # Tenta extrair imagem em tags do feed primeiro
+                        imagem_capa = None
+                        if "media_content" in entry and len(entry.media_content) > 0:
+                            imagem_capa = entry.media_content[0].get("url")
+                        elif "links" in entry:
+                            for l in entry.links:
+                                if "image" in l.get("type", ""):
+                                    imagem_capa = l.get("href")
+                                    break
+                        
+                        # Se nao achou no feed, busca na pagina
+                        if not imagem_capa:
+                            imagem_capa = extrair_imagem_real(link, headers)
+
                         nova = Promocao(
                             titulo=titulo,
                             link=link,
