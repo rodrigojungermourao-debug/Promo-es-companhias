@@ -1,33 +1,33 @@
-import os
-from database import Promocao, SessionLocal
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from scraper import coletar_promocoes
-import uvicorn
+from fastapi.responses import RedirectResponse
+from database import SessionLocal, Promocao
+import scraper
 
-app = FastAPI(title="Monitor de Milhas")
+app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
+@app.get("/")
+def index(request: Request, programa: str = None):
+    db = SessionLocal()
+    query = db.query(Promocao)
+    
+    if programa:
+        query = query.filter(Promocao.programa == programa)
+        
+    promocoes = query.order_by(Promocao.id.desc()).all()
+    db.close()
+    
+    # Se o banco estiver vazio (ex: acabou de subir novo deploy), busca a primeira vez
+    if not promocoes:
+        scraper.coletar_promocoes()
+        db = SessionLocal()
+        promocoes = db.query(Promocao).order_by(Promocao.id.desc()).all()
+        db.close()
 
-@app.get("/", response_class=HTMLResponse)
-def index(request: Request):
-  coletar_promocoes()
+    return templates.TemplateResponse("index.html", {"request": request, "promocoes": promocoes})
 
-  db = SessionLocal()
-  promocoes = (
-      db.query(Promocao).order_by(Promocao.data_coleta.desc()).limit(30).all()
-  )
-  db.close()
-
-  return templates.TemplateResponse(
-      request=request,
-      name="index.html",
-      context={"promocoes": promocoes},
-  )
-
-
-if __name__ == "__main__":
-  port = int(os.environ.get("PORT", 8000))
-  uvicorn.run("main:app", host="0.0.0.0", port=port)
-  
+@app.get("/atualizar")
+def atualizar():
+    scraper.coletar_promocoes()
+    return RedirectResponse(url="/", status_code=303)
