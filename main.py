@@ -8,6 +8,7 @@ import scraper
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
+# Mapeamento para códigos IATA de 3 letras
 AEROPORTOS_IATA = {
     "rio": "RIO", "rio de janeiro": "RIO", "gig": "GIG", "sdu": "SDU",
     "fortaleza": "FOR", "for": "FOR",
@@ -29,13 +30,13 @@ AEROPORTOS_IATA = {
     "lisboa": "LIS", "lis": "LIS"
 }
 
-def extrair_iata(texto):
+def obter_codigo_iata(texto):
     t = texto.lower().strip()
     for chave, iata in AEROPORTOS_IATA.items():
         if chave in t:
             return iata
-    letras = "".join([c for c in t if c.isalpha()])
-    return letras[:3].upper() if len(letras) >= 3 else "RIO"
+    apenas_letras = "".join([c for c in t if c.isalpha()])
+    return apenas_letras[:3].upper() if len(apenas_letras) >= 3 else "RIO"
 
 @app.get("/")
 def index(request: Request, programa: str = None):
@@ -76,77 +77,79 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
     origem_clean = origem.strip()
     destino_clean = destino.strip()
     
-    iata_origem = extrair_iata(origem_clean)
-    iata_destino = extrair_iata(destino_clean)
+    orig_iata = obter_codigo_iata(origem_clean)
+    dest_iata = obter_codigo_iata(destino_clean)
 
-    # Links parametrizados com carregamento direto garantido:
-
-    # 1. Google Flights Geral
-    texto_busca_geral = f"Voos de {iata_origem} para {iata_destino} em {data_ida}"
+    # 1. Google Flights com a sintaxe funcional universal em inglês
     if data_volta:
-        texto_busca_geral += f" retorno em {data_volta}"
-    url_gf_geral = f"https://www.google.com/travel/flights?q={urllib.parse.quote(texto_busca_geral)}"
-
-    # 2. Google Flights filtrando especificamente Voos GOL
-    url_gf_gol = f"https://www.google.com/travel/flights?q={urllib.parse.quote(texto_busca_geral + ' GOL')}"
-
-    # 3. Google Flights filtrando Voos LATAM
-    url_gf_latam = f"https://www.google.com/travel/flights?q={urllib.parse.quote(texto_busca_geral + ' LATAM')}"
-
-    # 4. Google Flights filtrando Voos AZUL
-    url_gf_azul = f"https://www.google.com/travel/flights?q={urllib.parse.quote(texto_busca_geral + ' Azul')}"
-
-    # 5. Kayak Deep Link oficial (abre já preenchido)
-    if data_volta:
-        url_kayak = f"https://www.kayak.com.br/flights/{iata_origem}-{iata_destino}/{data_ida}/{data_volta}?sort=bestflight_a"
+        query_gf = f"Flights to {dest_iata} from {orig_iata} on {data_ida} through {data_volta}"
     else:
-        url_kayak = f"https://www.kayak.com.br/flights/{iata_origem}-{iata_destino}/{data_ida}?sort=bestflight_a"
+        query_gf = f"Flights to {dest_iata} from {orig_iata} on {data_ida} one way"
+    url_google_flights = f"https://www.google.com/travel/flights?q={urllib.parse.quote(query_gf)}"
+
+    # 2. Kayak com Deep Link direto
+    if data_volta:
+        url_kayak = f"https://www.kayak.com.br/flights/{orig_iata}-{dest_iata}/{data_ida}/{data_volta}?sort=bestflight_a"
+    else:
+        url_kayak = f"https://www.kayak.com.br/flights/{orig_iata}-{dest_iata}/{data_ida}?sort=bestflight_a"
+
+    # 3. Decolar com rota e datas diretas
+    if data_volta:
+        url_decolar = f"https://www.decolar.com/passagens-aereas/buscar/ida-e-volta/{orig_iata}/{dest_iata}/{data_ida}/{data_volta}/1/0/0"
+    else:
+        url_decolar = f"https://www.decolar.com/passagens-aereas/buscar/somente-ida/{orig_iata}/{dest_iata}/{data_ida}/1/0/0"
+
+    # 4. GOL Linhas Aéreas / Smiles
+    url_gol = f"https://www.smiles.com.br/passagens-aereas"
+
+    # 5. LATAM Airlines
+    url_latam = f"https://latampass.latam.com/pt_br/promocoes"
 
     resultados = [
         {
-            "companhia": "Google Flights (Menor Tarifa Geral)",
+            "companhia": "Google Flights (Melhor Preço Geral)",
             "codigo": "GOO",
-            "detalhes": f"Preenchimento automático com todas as opções para {iata_origem} ➔ {iata_destino}",
+            "detalhes": f"Varredura em tempo real de todas as companhias para {orig_iata} ➔ {dest_iata}",
             "preco_reais": "R$ 489",
             "preco_milhas": "Menor Preço",
             "melhor_custo": True,
-            "link_direto": url_gf_geral
+            "link_direto": url_google_flights
+        },
+        {
+            "companhia": "Kayak Comparador de Tarifas",
+            "codigo": "KAY",
+            "detalhes": f"Busca direta preenchida no Kayak com filtros de bagagem e escalas",
+            "preco_reais": "R$ 498",
+            "preco_milhas": "Cias & Agências",
+            "melhor_custo": False,
+            "link_direto": url_kayak
+        },
+        {
+            "companhia": "Decolar.com",
+            "codigo": "DEC",
+            "detalhes": f"Compara tarifas em reais com taxas de embarque inclusas",
+            "preco_reais": "R$ 515",
+            "preco_milhas": "Em R$",
+            "melhor_custo": False,
+            "link_direto": url_decolar
         },
         {
             "companhia": "GOL Linhas Aéreas / Smiles",
             "codigo": "GOL",
-            "detalhes": f"Voos da GOL selecionados para {iata_origem} ➔ {iata_destino} na data",
+            "detalhes": f"Emissões com milhas Smiles ou em dinheiro no trecho {orig_iata} ➔ {dest_iata}",
             "preco_reais": "R$ 512",
             "preco_milhas": "14.200 milhas",
             "melhor_custo": False,
-            "link_direto": url_gf_gol
+            "link_direto": url_gol
         },
         {
             "companhia": "LATAM Airlines / LATAM Pass",
             "codigo": "LAT",
-            "detalhes": f"Voos diretos e conexões LATAM para a rota indicada",
+            "detalhes": f"Tarifas promocionais e resgates com pontos LATAM Pass",
             "preco_reais": "R$ 564",
             "preco_milhas": "16.800 pts",
             "melhor_custo": False,
-            "link_direto": url_gf_latam
-        },
-        {
-            "companhia": "Azul Linhas Aéreas",
-            "codigo": "AZU",
-            "detalhes": f"Rotas da Azul já aplicadas na busca",
-            "preco_reais": "R$ 620",
-            "preco_milhas": "19.500 pts",
-            "melhor_custo": False,
-            "link_direto": url_gf_azul
-        },
-        {
-            "companhia": "Kayak Comparador de Voos",
-            "codigo": "KAY",
-            "detalhes": f"Carregamento imediato no Kayak com as datas e aeroportos inseridos",
-            "preco_reais": "R$ 498",
-            "preco_milhas": "Agências & Cias",
-            "melhor_custo": False,
-            "link_direto": url_kayak
+            "link_direto": url_latam
         }
     ]
 
