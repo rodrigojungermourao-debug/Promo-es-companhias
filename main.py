@@ -67,8 +67,7 @@ def tela_passagens(request: Request):
             "origem": "",
             "destino": "",
             "data_ida": "",
-            "data_volta": "",
-            "link_externo": ""
+            "data_volta": ""
         }
     )
 
@@ -80,13 +79,24 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
     orig_iata = obter_codigo_iata(origem_clean)
     dest_iata = obter_codigo_iata(destino_clean)
 
-    # Constrói o link universal do Google Flights com todas as companhias
+    # 1. Google Flights Link
     if data_volta:
         query_gf = f"Flights to {dest_iata} from {orig_iata} on {data_ida} through {data_volta}"
     else:
         query_gf = f"Flights to {dest_iata} from {orig_iata} on {data_ida} one way"
-        
     link_google_flights = f"https://www.google.com/travel/flights?q={urllib.parse.quote(query_gf)}"
+
+    # 2. Kayak Deep Link
+    if data_volta:
+        link_kayak = f"https://www.kayak.com.br/flights/{orig_iata}-{dest_iata}/{data_ida}/{data_volta}?sort=bestflight_a"
+    else:
+        link_kayak = f"https://www.kayak.com.br/flights/{orig_iata}-{dest_iata}/{data_ida}?sort=bestflight_a"
+
+    # 3. Decolar Deep Link
+    if data_volta:
+        link_decolar = f"https://www.decolar.com/passagens-aereas/buscar/ida-e-volta/{orig_iata}/{dest_iata}/{data_ida}/{data_volta}/1/0/0"
+    else:
+        link_decolar = f"https://www.decolar.com/passagens-aereas/buscar/somente-ida/{orig_iata}/{dest_iata}/{data_ida}/1/0/0"
 
     return templates.TemplateResponse(
         request=request,
@@ -97,7 +107,9 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
             "destino": destino_clean,
             "data_ida": data_ida,
             "data_volta": data_volta,
-            "link_externo": link_google_flights
+            "link_gf": link_google_flights,
+            "link_kayak": link_kayak,
+            "link_decolar": link_decolar
         }
     )
 
