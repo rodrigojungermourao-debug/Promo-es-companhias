@@ -37,16 +37,9 @@ def obter_codigo_iata(texto):
     apenas_letras = "".join([c for c in t if c.isalpha()])
     return apenas_letras[:3].upper() if len(apenas_letras) >= 3 else "RIO"
 
-def estimar_preco_medio(origem_iata, destino_iata):
-    rotas_nordeste = ["FOR", "REC", "SSA", "NAT", "MCZ"]
-    rotas_internacionais = ["BUE", "SCL", "MVD", "MIA", "MCO", "LIS"]
-    
-    if destino_iata in rotas_nordeste or origem_iata in rotas_nordeste:
-        return "R$ 680", "~22.000 milhas"
-    elif destino_iata in rotas_internacionais:
-        return "R$ 1.850", "~65.000 milhas"
-    else:
-        return "R$ 420", "~14.000 milhas"
+def limpar_nome_cidade(texto):
+    # Remove repetições como "(RIO)" se o usuário já digitou isso
+    return texto.replace("(RIO)", "").replace("(FOR)", "").replace("(SAO)", "").strip()
 
 @app.get("/")
 def index(request: Request, programa: str = None):
@@ -84,13 +77,11 @@ def tela_passagens(request: Request):
 
 @app.get("/passagens/buscar")
 def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida: str = "", data_volta: str = ""):
-    origem_clean = origem.strip()
-    destino_clean = destino.strip()
+    origem_clean = limpar_nome_cidade(origem)
+    destino_clean = limpar_nome_cidade(destino)
     
     orig_iata = obter_codigo_iata(origem_clean)
     dest_iata = obter_codigo_iata(destino_clean)
-
-    preco_medio_reais, preco_medio_milhas = estimar_preco_medio(orig_iata, dest_iata)
 
     if data_volta:
         query_gf = f"Flights to {dest_iata} from {orig_iata} on {data_ida} through {data_volta}"
@@ -110,8 +101,6 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
             "dest_iata": dest_iata,
             "data_ida": data_ida,
             "data_volta": data_volta,
-            "preco_medio_reais": preco_medio_reais,
-            "preco_medio_milhas": preco_medio_milhas,
             "link_gf": link_google_flights
         }
     )

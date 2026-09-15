@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comparador de Voos - Google Flights</title>
+    <title>Comparador de Voos - RadarMilhas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
@@ -40,7 +40,7 @@
                 <div class="lg:col-span-6 relative flex flex-col sm:flex-row items-center gap-2">
                     <div class="w-full border border-slate-300 rounded-2xl px-4 py-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200 bg-white transition">
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Origem</label>
-                        <input type="text" name="origem" value="{{ origem }}" placeholder="Digite a cidade de saída" required
+                        <input type="text" name="origem" value="{{ origem }}" placeholder="Cidade de saída (ex: RIO)" required
                                class="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none">
                     </div>
 
@@ -50,7 +50,7 @@
 
                     <div class="w-full border border-slate-300 rounded-2xl px-4 py-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200 bg-white transition">
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Destino</label>
-                        <input type="text" name="destino" value="{{ destino }}" placeholder="Para onde você quer ir?" required
+                        <input type="text" name="destino" value="{{ destino }}" placeholder="Destino (ex: FOR)" required
                                class="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none">
                     </div>
                 </div>
@@ -80,7 +80,7 @@
             </form>
         </div>
 
-        <!-- Card de Resultado com Preço Médio Destacado -->
+        <!-- Card de Resultado -->
         {% if buscou %}
         <div class="space-y-4">
             <div class="flex items-center justify-between px-1">
@@ -107,18 +107,18 @@
                             </span>
                         </div>
                         <p class="text-xs text-slate-500 mt-1">
-                            Comparação em tempo real de todas as companhias (GOL, LATAM, Azul) para o trecho <b>{{ orig_iata }} ➔ {{ dest_iata }}</b>.
+                            Consulta em tempo real de todas as operadoras (LATAM, GOL, Azul) para o trecho <b>{{ orig_iata }} ➔ {{ dest_iata }}</b> nas datas indicadas.
                         </p>
                     </div>
                 </div>
 
                 <div class="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 pt-4 md:pt-0">
                     <div class="text-right">
-                        <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Preço Médio Estimado</span>
+                        <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Tarifas Atuais</span>
                         <div class="flex items-baseline justify-end gap-2">
-                            <span class="text-2xl font-black text-slate-900">{{ preco_medio_reais }}</span>
-                            <span class="text-xs font-bold text-slate-400">ou</span>
-                            <span class="text-sm font-extrabold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">{{ preco_medio_milhas }}</span>
+                            <span class="text-lg font-black text-slate-900">Tempo Real</span>
+                            <span class="text-xs font-bold text-slate-400">/</span>
+                            <span class="text-xs font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">GOL, LATAM & Azul</span>
                         </div>
                     </div>
 
@@ -137,7 +137,7 @@
                 <i class="fa-solid fa-plane"></i>
             </div>
             <h3 class="text-lg font-black text-slate-800">Preencha os dados acima</h3>
-            <p class="text-slate-500 text-sm mt-1 max-w-md">O sistema mostrará a faixa média estimada e abrirá a comparação em tempo real no Google Flights.</p>
+            <p class="text-slate-500 text-sm mt-1 max-w-md">O sistema abrirá a pesquisa de todas as operadoras no Google Flights com rota e datas prontas.</p>
         </div>
         {% endif %}
     </main>
