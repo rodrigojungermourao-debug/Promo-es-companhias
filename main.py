@@ -28,23 +28,63 @@ def index(request: Request, programa: str = None):
     )
 
 @app.get("/passagens")
-def passagens(request: Request, apenas_recomendadas: bool = False):
-    db = SessionLocal()
-    query = db.query(Promocao)
-
-    termos = ["passag", "voo", "aéreo", "aereo", "tarifa", "trecho", "ida e volta", "ida"]
-    todas = query.order_by(Promocao.id.desc()).all()
-    
-    lista = [p for p in todas if any(t in p.titulo.lower() for t in termos)]
-    
-    if apenas_recomendadas:
-        lista = [p for p in lista if p.vale_a_pena]
-
-    db.close()
+def tela_passagens(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="passagens.html",
-        context={"passagens": lista, "apenas_recomendadas": apenas_recomendadas}
+        context={"buscou": False}
+    )
+
+@app.get("/passagens/buscar")
+def buscar_voos(request: Request, origem: str, destino: str, data_ida: str, data_volta: str = None):
+    # Links diretos estruturados para consulta imediata nas companhias e Google Flights
+    gf_url = f"https://www.google.com/travel/flights?q=Voos%20de%20{origem}%20para%20{destino}%20em%20{data_ida}"
+    gol_url = "https://www.voegol.com.br"
+    latam_url = "https://www.latamairlines.com/br/pt"
+    azul_url = "https://www.voeazul.com.br"
+
+    resultados = [
+        {
+            "companhia": "Google Flights / Menor Tarifa",
+            "detalhes": f"Varredura consolidada de todas as empresas no trecho {origem} ➔ {destino}",
+            "preco": "Tarifas em tempo real",
+            "vale_a_pena": True,
+            "link_direto": gf_url
+        },
+        {
+            "companhia": "GOL Linhas Aéreas / Smiles",
+            "detalhes": f"Voo direto ou conexão com emissão em R$ ou Milhas Smiles",
+            "preco": "Consultar trecho",
+            "vale_a_pena": False,
+            "link_direto": gol_url
+        },
+        {
+            "companhia": "LATAM Airlines / LATAM Pass",
+            "detalhes": f"Tarifas promocionais e resgate com pontos LATAM Pass",
+            "preco": "Consultar trecho",
+            "vale_a_pena": False,
+            "link_direto": latam_url
+        },
+        {
+            "companhia": "Azul Linhas Aéreas",
+            "detalhes": f"Voos nacionais e conexões internacionais",
+            "preco": "Consultar trecho",
+            "vale_a_pena": False,
+            "link_direto": azul_url
+        }
+    ]
+
+    return templates.TemplateResponse(
+        request=request,
+        name="passagens.html",
+        context={
+            "buscou": True,
+            "origem": origem,
+            "destino": destino,
+            "data_ida": data_ida,
+            "data_volta": data_volta,
+            "resultados": resultados
+        }
     )
 
 @app.get("/atualizar")
