@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from database import SessionLocal, Promocao
@@ -17,17 +17,10 @@ def index(request: Request, programa: str = None):
         
     promocoes = query.order_by(Promocao.id.desc()).all()
     db.close()
-    
-    # Se o banco estiver vazio (ex: acabou de subir novo deploy), busca a primeira vez
-    if not promocoes:
-        scraper.coletar_promocoes()
-        db = SessionLocal()
-        promocoes = db.query(Promocao).order_by(Promocao.id.desc()).all()
-        db.close()
 
     return templates.TemplateResponse("index.html", {"request": request, "promocoes": promocoes})
 
 @app.get("/atualizar")
-def atualizar():
-    scraper.coletar_promocoes()
+def atualizar(background_tasks: BackgroundTasks):
+    background_tasks.add_task(scraper.coletar_promocoes)
     return RedirectResponse(url="/", status_code=303)
