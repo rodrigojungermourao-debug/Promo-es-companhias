@@ -4,8 +4,18 @@ import requests
 from bs4 import BeautifulSoup
 from database import SessionLocal, Promocao
 
-def extrair_imagem(entry, headers):
-    # 1. Tenta media_content ou links do RSS
+IMAGENS_PADRAO = {
+    "Livelo": "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=600&auto=format&fit=crop&q=80",
+    "Smiles": "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&auto=format&fit=crop&q=80",
+    "LATAM Pass": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&auto=format&fit=crop&q=80",
+    "Azul": "https://images.unsplash.com/photo-1508873696983-2df5703bc375?w=600&auto=format&fit=crop&q=80",
+    "Esfera": "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=600&auto=format&fit=crop&q=80",
+    "Premmia": "https://images.unsplash.com/photo-1527018607636-06b29f074a3f?w=600&auto=format&fit=crop&q=80",
+    "Geral": "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&auto=format&fit=crop&q=80"
+}
+
+def extrair_imagem(entry, headers, programa):
+    # 1. media_content ou links do feed
     if "media_content" in entry and len(entry.media_content) > 0:
         url = entry.media_content[0].get("url")
         if url:
@@ -16,7 +26,7 @@ def extrair_imagem(entry, headers):
             if "image" in l.get("type", ""):
                 return l.get("href")
 
-    # 2. Tenta extrair a tag <img> de dentro do resumo ou conteudo do post
+    # 2. Tag <img> dentro do conteúdo HTML da postagem
     conteudo_html = ""
     if "content" in entry and len(entry.content) > 0:
         conteudo_html = entry.content[0].value
@@ -27,11 +37,10 @@ def extrair_imagem(entry, headers):
         img_match = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', conteudo_html)
         if img_match:
             img_url = img_match.group(1)
-            # Evita ícones/trackers minúsculos de analytics
             if not any(x in img_url.lower() for x in ["feedburner", "1x1", "pixel", "gravatar"]):
                 return img_url
 
-    # 3. Se ainda não achou, busca direto na meta og:image da página (com timeout curto)
+    # 3. Metatag og:image na página original
     try:
         link = entry.get("link", "")
         if link:
@@ -44,7 +53,8 @@ def extrair_imagem(entry, headers):
     except Exception:
         pass
 
-    return None
+    # 4. Fallback temático: nunca deixa o card em branco
+    return IMAGENS_PADRAO.get(programa, IMAGENS_PADRAO["Geral"])
 
 
 def coletar_promocoes():
@@ -104,9 +114,8 @@ def coletar_promocoes():
 
                 promo = db.query(Promocao).filter(Promocao.link == link).first()
 
-                # Se não existir, cadastra já buscando a imagem
                 if not promo:
-                    imagem = extrair_imagem(entry, headers)
+                    imagem = extrair_imagem(entry, headers, programa)
                     nova = Promocao(
                         titulo=titulo,
                         link=link,
@@ -115,12 +124,9 @@ def coletar_promocoes():
                     )
                     db.add(nova)
                     db.commit()
-                # Se já existe mas ficou sem foto antes, atualiza a imagem
                 elif not promo.imagem:
-                    imagem = extrair_imagem(entry, headers)
-                    if imagem:
-                        promo.imagem = imagem
-                        db.commit()
+                    promo.imagem = extrair_imagem(entry, headers, programa)
+                    db.commit()
 
         except Exception as e:
             print(f"[SCRAPER ERROR] {url}: {e}")
