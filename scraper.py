@@ -58,9 +58,11 @@ def coletar_promocoes():
     db = SessionLocal()
 
     urls = [
-    
-        "https://passageirodeprimeira.com/feed/?post_type=post"
-
+        "https://www.melhoresdestinos.com.br/feed",
+        "https://passageirodeprimeira.com/feed/?post_type=post",
+        "https://www.melhorescartoes.com.br/feed",
+        "https://pontospravoar.com/feed/",
+        "https://mestredasmilhas.com.br/feed/"
     ]
 
     headers = {
@@ -139,3 +141,4 @@ def coletar_promocoes():
             continue
 
     db.close()
+    
