@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -17,5 +17,7 @@ class Promocao(Base):
     link = Column(String, unique=True, index=True, nullable=False)
     programa = Column(String, nullable=True)
     imagem = Column(String, nullable=True)
+    vale_a_pena = Column(Boolean, default=False)
+    preco_destaque = Column(String, nullable=True)
 
 Base.metadata.create_all(bind=engine)

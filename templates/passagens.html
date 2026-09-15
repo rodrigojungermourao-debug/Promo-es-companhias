@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radar de Voos Baratos - RadarMilhas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="/" class="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition" title="Voltar para todas as promoções">
+                    <i class="fa-solid fa-arrow-left text-lg"></i>
+                </a>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-plane-departure text-blue-600 text-xl"></i>
+                    <span class="font-extrabold text-xl text-slate-900 tracking-tight">Passagens & Tarifas</span>
+                </div>
+            </div>
+            <a href="/atualizar" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span class="hidden sm:inline">Atualizar</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-1 w-full">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+                <h1 class="text-2xl font-black text-slate-900 tracking-tight">Passagens Mais em Conta</h1>
+                <p class="text-slate-500 text-sm mt-1">Classificação inteligente de preços em dinheiro (R$) e em milhas.</p>
+            </div>
+            
+            <div class="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm self-start md:self-auto">
+                <a href="/passagens" class="px-4 py-2 rounded-xl text-xs font-bold transition {% if not apenas_recomendadas %}bg-slate-900 text-white{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+                    Todas as Passagens
+                </a>
+                <a href="/passagens?apenas_recomendadas=True" class="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition {% if apenas_recomendadas %}bg-emerald-600 text-white{% else %}text-emerald-700 hover:bg-emerald-50{% endif %}">
+                    <i class="fa-solid fa-fire text-amber-300"></i> Apenas "Vale a Pena"
+                </a>
+            </div>
+        </div>
+
+        {% if passagens %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {% for item in passagens %}
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-lg transition">
+                <div class="relative h-44 bg-slate-100 overflow-hidden">
+                    <img src="{{ item.imagem }}" alt="{{ item.titulo }}" class="w-full h-full object-cover">
+                    
+                    {% if item.vale_a_pena %}
+                    <span class="absolute top-3 left-3 bg-emerald-600 text-white px-2.5 py-1 rounded-full text-[11px] font-black tracking-wide shadow-md flex items-center gap-1">
+                        <i class="fa-solid fa-fire text-amber-300"></i> VALE A PENA
+                    </span>
+                    {% else %}
+                    <span class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm">
+                        {{ item.programa }}
+                    </span>
+                    {% endif %}
+
+                    {% if item.preco_destaque %}
+                    <span class="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md text-slate-900 px-2.5 py-1 rounded-lg text-xs font-extrabold shadow">
+                        {{ item.preco_destaque }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="p-5 flex flex-col flex-1 justify-between">
+                    <h2 class="font-bold text-slate-900 text-sm leading-snug line-clamp-3 hover:text-blue-600">
+                        <a href="{{ item.link }}" target="_blank">{{ item.titulo }}</a>
+                    </h2>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span class="text-slate-400 font-medium">Tarifa rastreada</span>
+                        <a href="{{ item.link }}" target="_blank" class="inline-flex items-center gap-1.5 font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3.5 py-1.5 rounded-xl transition">
+                            Ver Voo <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-20 bg-white rounded-2xl border border-slate-200">
+            <i class="fa-solid fa-plane-slash text-slate-300 text-5xl mb-3"></i>
+            <h3 class="text-lg font-bold text-slate-800">Nenhuma tarifa encontrada com esses filtros</h3>
+            <p class="text-slate-500 text-sm mt-1">Tente alternar o filtro ou clique em atualizar no topo.</p>
+        </div>
+        {% endif %}
+    </main>
+</body>
+</html>
