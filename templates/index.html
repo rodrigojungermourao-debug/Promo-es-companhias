@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radar de Milhas | Livelo, Smiles & Bônus</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 antialiased">
+
+    <!-- Topbar / Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                    ✈️
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-900 leading-tight">Radar de Milhas</h1>
+                    <p class="text-xs text-slate-500">Monitor automático de transferências e promoções</p>
+                </div>
+            </div>
+            <button onclick="window.location.reload();" class="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg shadow transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                Atualizar Ofertas
+            </button>
+        </div>
+    </header>
+
+    <div class="max-w-5xl mx-auto px-4 py-8">
+
+        <!-- Controles: Busca e Filtros Rápidos -->
+        <div class="mb-6 space-y-4">
+            <!-- Campo de Busca Instantânea -->
+            <div class="relative">
+                <input 
+                    type="text" 
+                    id="filtroBusca" 
+                    placeholder="Filtrar promoções (ex: 100%, Smiles, Livelo, compra de pontos, bônus)..." 
+                    onkeyup="filtrarCards()"
+                    class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition"
+                >
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+            </div>
+
+            <!-- Botões de Atalho por Programa -->
+            <div class="flex flex-wrap gap-2 text-xs font-medium">
+                <button onclick="filtrarPrograma('todos')" class="filtro-btn active px-3 py-1.5 rounded-lg border border-slate-300 bg-slate-900 text-white">
+                    Todas
+                </button>
+                <button onclick="filtrarPrograma('Livelo')" class="filtro-btn px-3 py-1.5 rounded-lg border border-pink-200 bg-white text-pink-700 hover:bg-pink-50">
+                    Livelo
+                </button>
+                <button onclick="filtrarPrograma('Smiles')" class="filtro-btn px-3 py-1.5 rounded-lg border border-orange-200 bg-white text-orange-700 hover:bg-orange-50">
+                    Smiles
+                </button>
+                <button onclick="filtrarPrograma('Esfera')" class="filtro-btn px-3 py-1.5 rounded-lg border border-red-200 bg-white text-red-700 hover:bg-red-50">
+                    Esfera
+                </button>
+                <button onclick="filtrarPrograma('Azul')" class="filtro-btn px-3 py-1.5 rounded-lg border border-sky-200 bg-white text-sky-700 hover:bg-sky-50">
+                    Azul
+                </button>
+            </div>
+        </div>
+
+        <!-- Grade com os Cards de Promoções -->
+        <main id="containerPromos" class="grid gap-3.5">
+            {% for p in promocoes %}
+            <article class="promo-card bg-white p-5 rounded-xl border border-slate-200 shadow-xs hover:shadow-md hover:border-slate-300 transition flex flex-col md:flex-row md:items-center justify-between gap-4"
+                     data-programa="{{ p.programa }}"
+                     data-titulo="{{ p.titulo.lower() }}">
+                
+                <div class="space-y-2 flex-1">
+                    <!-- Badges -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        {% if 'Livelo' in p.programa %}
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-pink-100 text-pink-700">Livelo</span>
+                        {% endif %}
+                        {% if 'Smiles' in p.programa %}
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700">Smiles</span>
+                        {% endif %}
+                        {% if 'Esfera' in p.programa %}
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">Esfera</span>
+                        {% endif %}
+                        {% if 'Azul' in p.programa %}
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-700">Azul</span>
+                        {% endif %}
+                        {% if p.programa == 'Geral' %}
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">Destaque</span>
+                        {% endif %}
+
+                        <span class="text-xs text-slate-400">
+                            Detectado em {{ p.data_coleta.strftime('%d/%m às %H:%M') }}
+                        </span>
+                    </div>
+
+                    <!-- Título -->
+                    <h2 class="text-base font-semibold text-slate-900 leading-snug">
+                        {{ p.titulo }}
+                    </h2>
+                </div>
+
+                <!-- Ação / Botão Intuitivo -->
+                <div class="shrink-0 flex items-center md:self-center">
+                    <a href="{{ p.link }}" target="_blank" rel="noopener noreferrer" 
+                       class="w-full md:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs font-semibold rounded-lg shadow-xs transition">
+                        <span>Acessar Detalhes</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                </div>
+            </article>
+            {% else %}
+            <div class="text-center py-16 bg-white rounded-xl border border-slate-200">
+                <p class="text-slate-600 font-medium">Nenhuma promoção encontrada.</p>
+                <p class="text-xs text-slate-400 mt-1">Clique em "Atualizar Ofertas" para rodar a checagem.</p>
+            </div>
+            {% endfor %}
+        </main>
+
+        <p id="semResultados" class="hidden text-center py-12 text-slate-400 text-sm">
+            Nenhuma promoção corresponde ao filtro selecionado.
+        </p>
+    </div>
+
+    <!-- Script de Filtro Instantâneo no Front-end -->
+    <script>
+        let programaAtivo = 'todos';
+
+        function filtrarPrograma(prog) {
+            programaAtivo = prog;
+
+            // Atualiza o estilo dos botões
+            document.querySelectorAll('.filtro-btn').forEach(btn => {
+                btn.className = 'filtro-btn px-3 py-1.5 rounded-lg border bg-white text-slate-700 hover:bg-slate-50';
+            });
+            event.target.className = 'filtro-btn px-3 py-1.5 rounded-lg border border-slate-900 bg-slate-900 text-white';
+
+            filtrarCards();
+        }
+
+        function filtrarCards() {
+            const textoBusca = document.getElementById('filtroBusca').value.toLowerCase();
+            const cards = document.querySelectorAll('.promo-card');
+            let visiveis = 0;
+
+            cards.forEach(card => {
+                const titulo = card.getAttribute('data-titulo');
+                const prog = card.getAttribute('data-programa');
+
+                const bateuBusca = titulo.includes(textoBusca);
+                const bateuPrograma = (programaAtivo === 'todos') || prog.includes(programaAtivo);
+
+                if (bateuBusca && bateuPrograma) {
+                    card.style.display = 'flex';
+                    visiveis++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            document.getElementById('semResultados').style.display = (visiveis === 0) ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>
