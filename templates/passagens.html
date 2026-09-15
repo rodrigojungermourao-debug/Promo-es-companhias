@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comparador de Voos - RadarMilhas</title>
+    <title>Comparador de Voos (R$ e Milhas) - RadarMilhas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
@@ -31,7 +31,7 @@
         <!-- Caixa de Busca -->
         <div class="bg-white rounded-3xl p-6 shadow-xl border border-slate-200/80 mb-8">
             <h1 class="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
-                <i class="fa-solid fa-magnifying-glass text-orange-500"></i> Buscar Melhores Tarifas em Tempo Real
+                <i class="fa-solid fa-magnifying-glass text-orange-500"></i> Buscar Voos em Reais e por Milhas
             </h1>
 
             <form action="/passagens/buscar" method="GET" class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
@@ -40,7 +40,7 @@
                 <div class="lg:col-span-6 relative flex flex-col sm:flex-row items-center gap-2">
                     <div class="w-full border border-slate-300 rounded-2xl px-4 py-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200 bg-white transition">
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Origem</label>
-                        <input type="text" name="origem" value="{{ origem }}" placeholder="Cidade de saída (ex: RIO)" required
+                        <input type="text" name="origem" value="{{ origem }}" placeholder="Cidade ou aeroporto (ex: RIO)" required
                                class="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none">
                     </div>
 
@@ -80,69 +80,93 @@
             </form>
         </div>
 
-        <!-- Painel de Resultados Diretos -->
+        <!-- Resultados da Busca -->
         {% if buscou %}
         <div class="space-y-4">
-            <!-- Card Principal Google Flights -->
-            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
-                <div class="space-y-2 text-center md:text-left">
-                    <span class="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                        <i class="fa-solid fa-trophy text-amber-300"></i> Comparador Oficial
-                    </span>
-                    <h2 class="text-2xl sm:text-3xl font-black tracking-tight">
-                        {{ origem }} <i class="fa-solid fa-arrow-right text-sm text-blue-200 mx-2"></i> {{ destino }}
-                    </h2>
-                    <p class="text-blue-100 text-sm max-w-lg">
-                        Todas as companhias (GOL, LATAM, Azul) organizadas pelo menor valor em tempo real para as datas selecionadas.
-                    </p>
+            
+            <div class="flex items-center justify-between px-1">
+                <h2 class="text-xl font-black text-slate-900">
+                    Tarifas Encontradas: <span class="text-orange-600">{{ origem }} ➔ {{ destino }}</span>
+                </h2>
+                <span class="text-xs font-bold text-slate-500 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+                    Ida: {{ data_ida }} {% if data_volta %}| Volta: {{ data_volta }}{% endif %}
+                </span>
+            </div>
+
+            <!-- CARD 1: Comparador em Dinheiro (Google Flights) -->
+            <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl font-black shrink-0">
+                        <i class="fa-brands fa-google"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-extrabold text-lg text-slate-900">Menor Tarifa Geral (R$)</span>
+                            <span class="bg-blue-100 text-blue-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">Todas as Cias</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Comparação completa de preços em dinheiro no Google Flights (GOL, LATAM, Azul).</p>
+                    </div>
                 </div>
 
                 <a href="{{ link_gf }}" target="_blank" rel="noopener noreferrer" 
-                   class="w-full md:w-auto px-8 py-4 bg-white hover:bg-slate-100 text-blue-700 font-black text-base rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition flex items-center justify-center gap-3 shrink-0">
-                    <i class="fa-brands fa-google text-lg"></i>
-                    <span>Ver no Google Flights</span>
+                   class="w-full md:w-auto px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm rounded-2xl shadow-md shadow-blue-600/20 active:scale-95 transition flex items-center justify-center gap-2 shrink-0">
+                    <span>Ver Preços em R$</span>
                     <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
                 </a>
             </div>
 
-            <!-- Alternativas de Busca com Links Diretos -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <a href="{{ link_kayak }}" target="_blank" rel="noopener noreferrer" 
-                   class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md hover:border-orange-300 transition flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center font-black text-orange-600">
-                            K
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-slate-900 text-sm">Comparar no Kayak</h3>
-                            <p class="text-xs text-slate-400">Ver tarifas de agências e cias aéreas</p>
-                        </div>
+            <!-- CARD 2: Cotação em Milhas Smiles (GOL) -->
+            <div class="bg-white rounded-3xl p-6 border-2 border-orange-200 shadow-sm hover:shadow-md transition flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center text-2xl font-black shrink-0">
+                        <i class="fa-solid fa-plane"></i>
                     </div>
-                    <i class="fa-solid fa-arrow-up-right-from-square text-slate-400 text-xs"></i>
-                </a>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-extrabold text-lg text-slate-900">Smiles / GOL (Milhas)</span>
+                            <span class="bg-orange-100 text-orange-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">Resgate Direto</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Abre a busca oficial da Smiles já com a opção de milhas selecionada para a data.</p>
+                    </div>
+                </div>
 
-                <a href="{{ link_decolar }}" target="_blank" rel="noopener noreferrer" 
-                   class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center font-black text-blue-600">
-                            D
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-slate-900 text-sm">Comparar na Decolar</h3>
-                            <p class="text-xs text-slate-400">Preços finais com taxas inclusas</p>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-arrow-up-right-from-square text-slate-400 text-xs"></i>
+                <a href="{{ link_smiles_milhas }}" target="_blank" rel="noopener noreferrer" 
+                   class="w-full md:w-auto px-6 py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold text-sm rounded-2xl shadow-md shadow-orange-500/20 active:scale-95 transition flex items-center justify-center gap-2 shrink-0">
+                    <span>Ver Preço em Milhas</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
                 </a>
             </div>
+
+            <!-- CARD 3: Cotação em Pontos LATAM Pass -->
+            <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center text-2xl font-black shrink-0">
+                        <i class="fa-solid fa-ticket"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-extrabold text-lg text-slate-900">LATAM Pass (Pontos)</span>
+                            <span class="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">LATAM Airlines</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Resgate e emissão com pontos LATAM Pass na rota selecionada.</p>
+                    </div>
+                </div>
+
+                <a href="{{ link_latam_pontos }}" target="_blank" rel="noopener noreferrer" 
+                   class="w-full md:w-auto px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm rounded-2xl shadow-md shadow-indigo-600/20 active:scale-95 transition flex items-center justify-center gap-2 shrink-0">
+                    <span>Ver em Pontos LATAM</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                </a>
+            </div>
+
         </div>
         {% else %}
         <div class="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center justify-center">
             <div class="w-16 h-16 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center text-2xl mb-3">
                 <i class="fa-solid fa-plane"></i>
             </div>
-            <h3 class="text-lg font-black text-slate-800">Preencha a rota e as datas acima</h3>
-            <p class="text-slate-500 text-sm mt-1 max-w-md">O sistema preparará a busca para comparar todas as companhias instantaneamente.</p>
+            <h3 class="text-lg font-black text-slate-800">Preencha os dados acima</h3>
+            <p class="text-slate-500 text-sm mt-1 max-w-md">O sistema gerará os links diretos para você conferir a tarifa em dinheiro e em milhas Smiles/LATAM.</p>
         </div>
         {% endif %}
     </main>

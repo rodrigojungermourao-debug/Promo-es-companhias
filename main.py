@@ -79,24 +79,29 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
     orig_iata = obter_codigo_iata(origem_clean)
     dest_iata = obter_codigo_iata(destino_clean)
 
-    # 1. Google Flights Link
+    # 1. Google Flights (Comparador em R$)
     if data_volta:
         query_gf = f"Flights to {dest_iata} from {orig_iata} on {data_ida} through {data_volta}"
     else:
         query_gf = f"Flights to {dest_iata} from {orig_iata} on {data_ida} one way"
     link_google_flights = f"https://www.google.com/travel/flights?q={urllib.parse.quote(query_gf)}"
 
-    # 2. Kayak Deep Link
+    # 2. Deep Link Direto SMILES com Milhas ativadas
+    # O parametro miles=true e tipoViagem=V forçam a exibicao em milhas
+    link_smiles_milhas = f"https://www.smiles.com.br/passagens-aereas?from={orig_iata}&to={dest_iata}&departureDate={data_ida}&adults=1&miles=true"
+    if data_volta:
+        link_smiles_milhas += f"&returnDate={data_volta}"
+
+    # 3. Deep Link LATAM Pass com busca de pontos
+    link_latam_pontos = f"https://www.latamairlines.com/br/pt/ofertas-voos?origin={orig_iata}&destination={dest_iata}&outbound={data_ida}&redemption=true"
+    if data_volta:
+        link_latam_pontos += f"&inbound={data_volta}"
+
+    # 4. Kayak para comparador geral
     if data_volta:
         link_kayak = f"https://www.kayak.com.br/flights/{orig_iata}-{dest_iata}/{data_ida}/{data_volta}?sort=bestflight_a"
     else:
         link_kayak = f"https://www.kayak.com.br/flights/{orig_iata}-{dest_iata}/{data_ida}?sort=bestflight_a"
-
-    # 3. Decolar Deep Link
-    if data_volta:
-        link_decolar = f"https://www.decolar.com/passagens-aereas/buscar/ida-e-volta/{orig_iata}/{dest_iata}/{data_ida}/{data_volta}/1/0/0"
-    else:
-        link_decolar = f"https://www.decolar.com/passagens-aereas/buscar/somente-ida/{orig_iata}/{dest_iata}/{data_ida}/1/0/0"
 
     return templates.TemplateResponse(
         request=request,
@@ -108,8 +113,9 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
             "data_ida": data_ida,
             "data_volta": data_volta,
             "link_gf": link_google_flights,
-            "link_kayak": link_kayak,
-            "link_decolar": link_decolar
+            "link_smiles_milhas": link_smiles_milhas,
+            "link_latam_pontos": link_latam_pontos,
+            "link_kayak": link_kayak
         }
     )
 
