@@ -29,13 +29,13 @@ AEROPORTOS_IATA = {
     "lisboa": "LIS", "lis": "LIS"
 }
 
-def extrair_iata(texto):
+def obter_codigo_iata(texto):
     t = texto.lower().strip()
     for chave, iata in AEROPORTOS_IATA.items():
         if chave in t:
             return iata
-    letras = "".join([c for c in t if c.isalpha()])
-    return letras[:3].upper() if len(letras) >= 3 else "RIO"
+    apenas_letras = "".join([c for c in t if c.isalpha()])
+    return apenas_letras[:3].upper() if len(apenas_letras) >= 3 else "RIO"
 
 @app.get("/")
 def index(request: Request, programa: str = None):
@@ -67,7 +67,8 @@ def tela_passagens(request: Request):
             "origem": "",
             "destino": "",
             "data_ida": "",
-            "data_volta": ""
+            "data_volta": "",
+            "link_externo": ""
         }
     )
 
@@ -76,81 +77,16 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
     origem_clean = origem.strip()
     destino_clean = destino.strip()
     
-    iata_origem = extrair_iata(origem_clean)
-    iata_destino = extrair_iata(destino_clean)
+    orig_iata = obter_codigo_iata(origem_clean)
+    dest_iata = obter_codigo_iata(destino_clean)
 
-    # 1. Google Flights
+    # Constrói o link universal do Google Flights com todas as companhias
     if data_volta:
-        query_gf = f"Flights to {iata_destino} from {iata_origem} on {data_ida} through {data_volta}"
+        query_gf = f"Flights to {dest_iata} from {orig_iata} on {data_ida} through {data_volta}"
     else:
-        query_gf = f"Flights to {iata_destino} from {iata_origem} on {data_ida} one way"
-    url_google_flights = f"https://www.google.com/travel/flights?q={urllib.parse.quote(query_gf)}"
-
-    # 2. Kayak
-    if data_volta:
-        url_kayak = f"https://www.kayak.com.br/flights/{iata_origem}-{iata_destino}/{data_ida}/{data_volta}?sort=bestflight_a"
-    else:
-        url_kayak = f"https://www.kayak.com.br/flights/{iata_origem}-{iata_destino}/{data_ida}?sort=bestflight_a"
-
-    # 3. Decolar
-    if data_volta:
-        url_decolar = f"https://www.decolar.com/passagens-aereas/buscar/ida-e-volta/{iata_origem}/{iata_destino}/{data_ida}/{data_volta}/1/0/0"
-    else:
-        url_decolar = f"https://www.decolar.com/passagens-aereas/buscar/somente-ida/{iata_origem}/{iata_destino}/{data_ida}/1/0/0"
-
-    # 4. GOL / Smiles
-    url_gol = f"https://www.smiles.com.br/passagens-aereas"
-
-    # 5. LATAM Pass
-    url_latam = f"https://latampass.latam.com/pt_br/promocoes"
-
-    resultados = [
-        {
-            "companhia": "Google Flights (Comparador Geral)",
-            "codigo": "GOO",
-            "detalhes": f"Consulta simultânea de todas as companhias na rota ({iata_origem} ➔ {iata_destino})",
-            "preco_reais": "Tempo Real",
-            "preco_milhas": "Menor Tarifa",
-            "melhor_custo": True,
-            "link_direto": url_google_flights
-        },
-        {
-            "companhia": "GOL Linhas Aéreas / Smiles",
-            "codigo": "GOL",
-            "detalhes": f"Cotação dinâmica Smiles para {iata_origem} ➔ {iata_destino} na data",
-            "preco_reais": "Dinâmico",
-            "preco_milhas": "Milhas Smiles",
-            "melhor_custo": False,
-            "link_direto": url_gol
-        },
-        {
-            "companhia": "Kayak Metabusca",
-            "codigo": "KAY",
-            "detalhes": f"Rastreamento de agências online, bagagens e taxas em tempo real",
-            "preco_reais": "Tempo Real",
-            "preco_milhas": "Agências & Cias",
-            "melhor_custo": False,
-            "link_direto": url_kayak
-        },
-        {
-            "companhia": "Decolar.com",
-            "codigo": "DEC",
-            "detalhes": f"Pacotes e passagens com taxas inclusas na rota {iata_origem} ➔ {iata_destino}",
-            "preco_reais": "Em Reais",
-            "preco_milhas": "Parcelamento",
-            "melhor_custo": False,
-            "link_direto": url_decolar
-        },
-        {
-            "companhia": "LATAM Airlines / LATAM Pass",
-            "codigo": "LAT",
-            "detalhes": f"Resgate tarifário direto e pontos LATAM Pass",
-            "preco_reais": "Dinâmico",
-            "preco_milhas": "Pontos LATAM",
-            "melhor_custo": False,
-            "link_direto": url_latam
-        }
-    ]
+        query_gf = f"Flights to {dest_iata} from {orig_iata} on {data_ida} one way"
+        
+    link_google_flights = f"https://www.google.com/travel/flights?q={urllib.parse.quote(query_gf)}"
 
     return templates.TemplateResponse(
         request=request,
@@ -161,7 +97,7 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
             "destino": destino_clean,
             "data_ida": data_ida,
             "data_volta": data_volta,
-            "resultados": resultados
+            "link_externo": link_google_flights
         }
     )
 
