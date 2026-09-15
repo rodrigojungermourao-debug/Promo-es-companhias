@@ -43,7 +43,6 @@ def coletar_promocoes():
                 titulo = entry.get("title", "").strip()
                 link = entry.get("link", "").strip()
                 descricao = entry.get("summary", "").strip()
-                data_publicacao = entry.get("published", "")
 
                 if not titulo or not link:
                     continue
@@ -67,7 +66,7 @@ def coletar_promocoes():
                 else:
                     programa = "Geral"
 
-                # Evita duplicidade
+                # Evita duplicatas
                 existe = db.query(Promocao).filter(Promocao.link == link).first()
                 if not existe:
                     imagem = None
@@ -79,11 +78,10 @@ def coletar_promocoes():
                                 imagem = l.get("href")
                                 break
 
-                    # Cria o objeto sem campos inexistentes no modelo
+                    # Apenas os campos confirmados da tabela
                     nova = Promocao(
                         titulo=titulo,
                         link=link,
-                        data_publicacao=data_publicacao,
                         programa=programa,
                         imagem=imagem
                     )
