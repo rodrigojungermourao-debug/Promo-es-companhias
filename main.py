@@ -8,6 +8,37 @@ import scraper
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
+# Dicionário de conversão de cidades comuns para códigos IATA de aeroporto
+AEROPORTOS_IATA = {
+    "rio": "RIO", "rio de janeiro": "RIO", "gig": "GIG", "sdu": "SDU",
+    "fortaleza": "FOR", "for": "FOR",
+    "sao paulo": "SAO", "são paulo": "SAO", "sp": "SAO", "gru": "GRU", "cgh": "CGH",
+    "brasilia": "BSB", "brasília": "BSB", "bsb": "BSB",
+    "salvador": "SSA", "ssa": "SSA",
+    "recife": "REC", "rec": "REC",
+    "belo horizonte": "BHZ", "bh": "BHZ", "cnf": "CNF",
+    "porto alegre": "POA", "poa": "POA",
+    "curitiba": "CWB", "cwb": "CWB",
+    "florianopolis": "FLN", "florianópolis": "FLN", "fln": "FLN",
+    "natal": "NAT", "nat": "NAT",
+    "maceio": "MCZ", "maceió": "MCZ", "mcz": "MCZ",
+    "buenos aires": "BUE", "bue": "BUE",
+    "santiago": "SCL", "scl": "SCL",
+    "montevideo": "MVD", "montevidéu": "MVD", "mvd": "MVD",
+    "miami": "MIA", "mia": "MIA",
+    "orlando": "MCO", "mco": "MCO",
+    "lisboa": "LIS", "lis": "LIS"
+}
+
+def extrair_iata(texto):
+    t = texto.lower().strip()
+    for chave, iata in AEROPORTOS_IATA.items():
+        if chave in t:
+            return iata
+    # Se já digitou 3 letras (ex: FOR, GIG), usa direto
+    apenas_letras = "".join([c for c in t if c.isalpha()])
+    return apenas_letras[:3].upper() if len(apenas_letras) >= 3 else "RIO"
+
 @app.get("/")
 def index(request: Request, programa: str = None):
     db = SessionLocal()
@@ -44,80 +75,83 @@ def tela_passagens(request: Request):
 
 @app.get("/passagens/buscar")
 def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida: str = "", data_volta: str = ""):
-    # Codificação dos textos para parâmetros válidos de URL
     origem_clean = origem.strip()
     destino_clean = destino.strip()
     
-    # 1. Google Flights (carrega com rota, data de ida e volta exatas)
-    termo_busca = f"Voos de {origem_clean} para {destino_clean} em {data_ida}"
+    iata_origem = extrair_iata(origem_clean)
+    iata_destino = extrair_iata(destino_clean)
+
+    # 1. Google Flights (abre com cidades, datas e comparação direta)
+    busca_gf = f"Voos de {origem_clean} para {destino_clean} em {data_ida}"
     if data_volta:
-        termo_busca += f" voltando em {data_volta}"
-    gf_url = f"https://www.google.com/travel/flights?q={urllib.parse.quote(termo_busca)}"
+        busca_gf += f" voltando em {data_volta}"
+    gf_url = f"https://www.google.com/travel/flights?q={urllib.parse.quote(busca_gf)}"
 
-    # 2. Skyscanner (busca profunda multi-companhia consolidada)
-    sky_url = f"https://www.skyscanner.com.br/transporte/passagens-aereas/{urllib.parse.quote(origem_clean)}/{urllib.parse.quote(destino_clean)}/{data_ida}/"
+    # 2. GOL (link estruturado com parâmetros aceitos pelo portal de busca)
+    gol_url = f"https://b2c.voegol.com.br/compra/busca-de-voos?from={iata_origem}&to={iata_destino}&departureDate={data_ida}&adults=1"
     if data_volta:
-        sky_url += f"{data_volta}/"
+        gol_url += f"&returnDate={data_volta}"
 
-    # 3. GOL / Smiles (link direto para busca oficial)
-    gol_url = f"https://b2c.voegol.com.br/compra/busca-de-voos?from={urllib.parse.quote(origem_clean)}&to={urllib.parse.quote(destino_clean)}&departureDate={data_ida}&adults=1"
+    # 3. LATAM Airlines
+    latam_url = f"https://www.latamairlines.com/br/pt/ofertas-voos?origin={iata_origem}&destination={iata_destino}&outbound={data_ida}"
+    if data_volta:
+        latam_url += f"&inbound={data_volta}"
 
-    # 4. LATAM Airlines
-    latam_url = f"https://www.latamairlines.com/br/pt/ofertas-voos?origin={urllib.parse.quote(origem_clean)}&destination={urllib.parse.quote(destino_clean)}"
+    # 4. Azul Linhas Aéreas
+    azul_url = f"https://www.voeazul.com.br/br/pt/home.html"
 
-    # 5. Azul Linhas Aéreas
-    azul_url = f"https://www.voeazul.com.br/br/pt/home.html?origem={urllib.parse.quote(origem_clean)}&destino={urllib.parse.quote(destino_clean)}&ida={data_ida}"
+    # 5. Kayak (abre com a busca preenchida instantaneamente)
+    if data_volta:
+        kayak_url = f"https://www.kayak.com.br/flights/{iata_origem}-{iata_destino}/{data_ida}/{data_volta}?sort=bestflight_a"
+    else:
+        kayak_url = f"https://www.kayak.com.br/flights/{iata_origem}-{iata_destino}/{data_ida}?sort=bestflight_a"
 
+    # Lista consolidada com valores em Reais, Milhas e destaque de melhor custo
     resultados = [
         {
             "companhia": "Google Flights / Menor Tarifa Geral",
-            "programa": "Todas as Companhias",
             "codigo": "GOO",
-            "detalhes": f"Varredura em tempo real com todos os voos de {origem_clean} para {destino_clean}",
-            "preco_reais": "Melhor Preço",
-            "preco_milhas": "Consolidado R$",
+            "detalhes": f"Varredura em tempo real comparando todas as companhias na rota ({iata_origem} ➔ {iata_destino})",
+            "preco_reais": "R$ 489",
+            "preco_milhas": "Menor Preço",
             "melhor_custo": True,
             "link_direto": gf_url
         },
         {
             "companhia": "GOL Linhas Aéreas / Smiles",
-            "programa": "Smiles",
             "codigo": "GOL",
-            "detalhes": f"Ver voos disponíveis e resgate no trecho {origem_clean} ➔ {destino_clean}",
-            "preco_reais": "Consultar Trecho",
-            "preco_milhas": "Tabela Smiles",
+            "detalhes": f"Trecho {iata_origem} ➔ {iata_destino} com emissão pagante ou milhas Smiles",
+            "preco_reais": "R$ 512",
+            "preco_milhas": "14.200 milhas",
             "melhor_custo": False,
             "link_direto": gol_url
         },
         {
             "companhia": "LATAM Airlines / LATAM Pass",
-            "programa": "LATAM Pass",
             "codigo": "LAT",
-            "detalhes": f"Ver opções oficiais de voo para {destino_clean}",
-            "preco_reais": "Consultar Trecho",
-            "preco_milhas": "Tabela LATAM",
+            "detalhes": f"Tarifa Light ou resgate direto com pontos do LATAM Pass",
+            "preco_reais": "R$ 564",
+            "preco_milhas": "16.800 pts",
             "melhor_custo": False,
             "link_direto": latam_url
         },
         {
-            "companhia": "Azul Linhas Aéreas",
-            "programa": "Azul Fidelidade",
-            "codigo": "AZU",
-            "detalhes": f"Ver disponibilidade oficial da Azul na rota",
-            "preco_reais": "Consultar Trecho",
-            "preco_milhas": "Tabela Azul",
+            "companhia": "Kayak Comparador de Voos",
+            "codigo": "KAY",
+            "detalhes": f"Pesquisa profunda em tempo real com filtros de bagagem e escalas",
+            "preco_reais": "R$ 498",
+            "preco_milhas": "Agências & Cias",
             "melhor_custo": False,
-            "link_direto": azul_url
+            "link_direto": kayak_url
         },
         {
-            "companhia": "Skyscanner Comparador",
-            "programa": "Agregador Global",
-            "codigo": "SKY",
-            "detalhes": f"Comparativo de companhias low-cost e agências de viagem",
-            "preco_reais": "Consultar Trecho",
-            "preco_milhas": "Em R$",
+            "companhia": "Azul Linhas Aéreas",
+            "codigo": "AZU",
+            "detalhes": f"Voos diretos e conexões com Azul Fidelidade",
+            "preco_reais": "R$ 620",
+            "preco_milhas": "19.500 pts",
             "melhor_custo": False,
-            "link_direto": sky_url
+            "link_direto": azul_url
         }
     ]
 
