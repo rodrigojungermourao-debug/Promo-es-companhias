@@ -18,7 +18,11 @@ def index(request: Request, programa: str = None):
     promocoes = query.order_by(Promocao.id.desc()).all()
     db.close()
 
-    return templates.TemplateResponse("index.html", {"request": request, "promocoes": promocoes})
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={"promocoes": promocoes}
+    )
 
 @app.get("/atualizar")
 def atualizar(background_tasks: BackgroundTasks):
