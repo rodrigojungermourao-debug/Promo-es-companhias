@@ -37,6 +37,17 @@ def obter_codigo_iata(texto):
     apenas_letras = "".join([c for c in t if c.isalpha()])
     return apenas_letras[:3].upper() if len(apenas_letras) >= 3 else "RIO"
 
+def estimar_preco_medio(origem_iata, destino_iata):
+    rotas_nordeste = ["FOR", "REC", "SSA", "NAT", "MCZ"]
+    rotas_internacionais = ["BUE", "SCL", "MVD", "MIA", "MCO", "LIS"]
+    
+    if destino_iata in rotas_nordeste or origem_iata in rotas_nordeste:
+        return "R$ 680", "~22.000 milhas"
+    elif destino_iata in rotas_internacionais:
+        return "R$ 1.850", "~65.000 milhas"
+    else:
+        return "R$ 420", "~14.000 milhas"
+
 @app.get("/")
 def index(request: Request, programa: str = None):
     db = SessionLocal()
@@ -79,29 +90,14 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
     orig_iata = obter_codigo_iata(origem_clean)
     dest_iata = obter_codigo_iata(destino_clean)
 
-    # 1. Google Flights (Comparador em R$)
+    preco_medio_reais, preco_medio_milhas = estimar_preco_medio(orig_iata, dest_iata)
+
     if data_volta:
         query_gf = f"Flights to {dest_iata} from {orig_iata} on {data_ida} through {data_volta}"
     else:
         query_gf = f"Flights to {dest_iata} from {orig_iata} on {data_ida} one way"
+        
     link_google_flights = f"https://www.google.com/travel/flights?q={urllib.parse.quote(query_gf)}"
-
-    # 2. Deep Link Direto SMILES com Milhas ativadas
-    # O parametro miles=true e tipoViagem=V forçam a exibicao em milhas
-    link_smiles_milhas = f"https://www.smiles.com.br/passagens-aereas?from={orig_iata}&to={dest_iata}&departureDate={data_ida}&adults=1&miles=true"
-    if data_volta:
-        link_smiles_milhas += f"&returnDate={data_volta}"
-
-    # 3. Deep Link LATAM Pass com busca de pontos
-    link_latam_pontos = f"https://www.latamairlines.com/br/pt/ofertas-voos?origin={orig_iata}&destination={dest_iata}&outbound={data_ida}&redemption=true"
-    if data_volta:
-        link_latam_pontos += f"&inbound={data_volta}"
-
-    # 4. Kayak para comparador geral
-    if data_volta:
-        link_kayak = f"https://www.kayak.com.br/flights/{orig_iata}-{dest_iata}/{data_ida}/{data_volta}?sort=bestflight_a"
-    else:
-        link_kayak = f"https://www.kayak.com.br/flights/{orig_iata}-{dest_iata}/{data_ida}?sort=bestflight_a"
 
     return templates.TemplateResponse(
         request=request,
@@ -110,12 +106,13 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
             "buscou": True,
             "origem": origem_clean,
             "destino": destino_clean,
+            "orig_iata": orig_iata,
+            "dest_iata": dest_iata,
             "data_ida": data_ida,
             "data_volta": data_volta,
-            "link_gf": link_google_flights,
-            "link_smiles_milhas": link_smiles_milhas,
-            "link_latam_pontos": link_latam_pontos,
-            "link_kayak": link_kayak
+            "preco_medio_reais": preco_medio_reais,
+            "preco_medio_milhas": preco_medio_milhas,
+            "link_gf": link_google_flights
         }
     )
 
