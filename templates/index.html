@@ -51,7 +51,7 @@
             </nav>
         </div>
 
-        <!-- Rodapé do Menu (apenas versão/créditos) -->
+        <!-- Rodapé do Menu -->
         <div class="p-4 border-t border-slate-100">
             <p class="text-[11px] text-slate-400 text-center">Radar de Milhas © 2026</p>
         </div>
@@ -82,7 +82,7 @@
         </div>
     </header>
 
-    <!-- CONTEÚDO PRINCIPAL (Filtros e Grid de Cards) -->
+    <!-- CONTEÚDO PRINCIPAL -->
     <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
         
         <!-- BARRA DE FILTROS POR TAGS / PROGRAMAS -->
@@ -148,7 +148,7 @@
                 <!-- Rodapé do Card com Link -->
                 <div class="p-4 pt-0 border-t border-slate-50 mt-2 flex items-center justify-between">
                     <span class="text-[11px] text-slate-400 font-medium">
-                        {{ promo.data_publicacao[:16] if promo.data_publicacao else 'Recente' }}
+                        {{ promo.data_publicacao if promo.data_publicacao else 'Recente' }}
                     </span>
                     <a href="{{ promo.link }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-xl hover:bg-blue-100 transition-colors">
                         <span>Ver Oferta</span>
@@ -160,7 +160,7 @@
         </div>
     </main>
 
-    <!-- SCRIPT DE ABERTURA E FECHAMENTO DO MENU -->
+    <!-- SCRIPT DO MENU HAMBÚRGUER -->
     <script>
         function toggleMenu() {
             const drawer = document.getElementById('menu-drawer');
