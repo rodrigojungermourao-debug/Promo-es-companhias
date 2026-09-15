@@ -2,6 +2,7 @@ import re
 import feedparser
 import requests
 from bs4 import BeautifulSoup
+from sqlalchemy.exc import IntegrityError
 from database import SessionLocal, Promocao
 
 IMAGENS_PADRAO = {
@@ -15,7 +16,6 @@ IMAGENS_PADRAO = {
 }
 
 def extrair_imagem(entry, headers, programa):
-    # 1. media_content ou links do feed
     if "media_content" in entry and len(entry.media_content) > 0:
         url = entry.media_content[0].get("url")
         if url:
@@ -26,7 +26,6 @@ def extrair_imagem(entry, headers, programa):
             if "image" in l.get("type", ""):
                 return l.get("href")
 
-    # 2. Tag <img> dentro do conteúdo HTML da postagem
     conteudo_html = ""
     if "content" in entry and len(entry.content) > 0:
         conteudo_html = entry.content[0].value
@@ -40,7 +39,6 @@ def extrair_imagem(entry, headers, programa):
             if not any(x in img_url.lower() for x in ["feedburner", "1x1", "pixel", "gravatar"]):
                 return img_url
 
-    # 3. Metatag og:image na página original
     try:
         link = entry.get("link", "")
         if link:
@@ -53,7 +51,6 @@ def extrair_imagem(entry, headers, programa):
     except Exception:
         pass
 
-    # 4. Fallback temático: nunca deixa o card em branco
     return IMAGENS_PADRAO.get(programa, IMAGENS_PADRAO["Geral"])
 
 
@@ -61,6 +58,7 @@ def coletar_promocoes():
     db = SessionLocal()
 
     urls = [
+    
         "https://passageirodeprimeira.com/feed/?post_type=post"
 
     ]
@@ -109,6 +107,7 @@ def coletar_promocoes():
                 else:
                     programa = "Geral"
 
+                # Busca se o link já existe no banco
                 promo = db.query(Promocao).filter(Promocao.link == link).first()
 
                 if not promo:
@@ -119,11 +118,21 @@ def coletar_promocoes():
                         programa=programa,
                         imagem=imagem
                     )
-                    db.add(nova)
-                    db.commit()
+                    try:
+                        db.add(nova)
+                        db.commit()
+                    except IntegrityError:
+                        db.rollback()  # Se já existia em concorrência, cancela sem quebrar a sessão
+                    except Exception:
+                        db.rollback()
                 elif not promo.imagem:
-                    promo.imagem = extrair_imagem(entry, headers, programa)
-                    db.commit()
+                    try:
+                        imagem = extrair_imagem(entry, headers, programa)
+                        if imagem:
+                            promo.imagem = imagem
+                            db.commit()
+                    except Exception:
+                        db.rollback()
 
         except Exception as e:
             print(f"[SCRAPER ERROR] {url}: {e}")
