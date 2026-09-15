@@ -1,3 +1,4 @@
+import urllib.parse
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
@@ -43,33 +44,58 @@ def tela_passagens(request: Request):
 
 @app.get("/passagens/buscar")
 def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida: str = "", data_volta: str = ""):
-    # Links diretos de busca pré-configurados
-    gf_url = f"https://www.google.com/travel/flights?q=Voos%20de%20{origem}%20para%20{destino}%20em%20{data_ida}"
-    gol_url = f"https://www.voegol.com.br"
-    latam_url = f"https://www.latamairlines.com/br/pt"
-    azul_url = f"https://www.voeazul.com.br"
+    # Codificação dos textos para parâmetros válidos de URL
+    origem_clean = origem.strip()
+    destino_clean = destino.strip()
+    
+    # 1. Google Flights (carrega com rota, data de ida e volta exatas)
+    termo_busca = f"Voos de {origem_clean} para {destino_clean} em {data_ida}"
+    if data_volta:
+        termo_busca += f" voltando em {data_volta}"
+    gf_url = f"https://www.google.com/travel/flights?q={urllib.parse.quote(termo_busca)}"
 
-    # Comparativo multi-companhia com valor em R$, Milhas e Selo de Custo
+    # 2. Skyscanner (busca profunda multi-companhia consolidada)
+    sky_url = f"https://www.skyscanner.com.br/transporte/passagens-aereas/{urllib.parse.quote(origem_clean)}/{urllib.parse.quote(destino_clean)}/{data_ida}/"
+    if data_volta:
+        sky_url += f"{data_volta}/"
+
+    # 3. GOL / Smiles (link direto para busca oficial)
+    gol_url = f"https://b2c.voegol.com.br/compra/busca-de-voos?from={urllib.parse.quote(origem_clean)}&to={urllib.parse.quote(destino_clean)}&departureDate={data_ida}&adults=1"
+
+    # 4. LATAM Airlines
+    latam_url = f"https://www.latamairlines.com/br/pt/ofertas-voos?origin={urllib.parse.quote(origem_clean)}&destination={urllib.parse.quote(destino_clean)}"
+
+    # 5. Azul Linhas Aéreas
+    azul_url = f"https://www.voeazul.com.br/br/pt/home.html?origem={urllib.parse.quote(origem_clean)}&destino={urllib.parse.quote(destino_clean)}&ida={data_ida}"
+
     resultados = [
         {
-            "companhia": "GOL Linhas Aéreas",
+            "companhia": "Google Flights / Menor Tarifa Geral",
+            "programa": "Todas as Companhias",
+            "codigo": "GOO",
+            "detalhes": f"Varredura em tempo real com todos os voos de {origem_clean} para {destino_clean}",
+            "preco_reais": "Melhor Preço",
+            "preco_milhas": "Consolidado R$",
+            "melhor_custo": True,
+            "link_direto": gf_url
+        },
+        {
+            "companhia": "GOL Linhas Aéreas / Smiles",
             "programa": "Smiles",
             "codigo": "GOL",
-            "cor": "orange",
-            "detalhes": f"Trecho {origem} ➔ {destino} com tarifas Smiles e Smiles Club",
-            "preco_reais": "R$ 489",
-            "preco_milhas": "14.200 milhas",
-            "melhor_custo": True,
+            "detalhes": f"Ver voos disponíveis e resgate no trecho {origem_clean} ➔ {destino_clean}",
+            "preco_reais": "Consultar Trecho",
+            "preco_milhas": "Tabela Smiles",
+            "melhor_custo": False,
             "link_direto": gol_url
         },
         {
-            "companhia": "LATAM Airlines",
+            "companhia": "LATAM Airlines / LATAM Pass",
             "programa": "LATAM Pass",
             "codigo": "LAT",
-            "cor": "indigo",
-            "detalhes": f"Tarifa Light ou resgate com pontos LATAM Pass",
-            "preco_reais": "R$ 542",
-            "preco_milhas": "16.800 pts",
+            "detalhes": f"Ver opções oficiais de voo para {destino_clean}",
+            "preco_reais": "Consultar Trecho",
+            "preco_milhas": "Tabela LATAM",
             "melhor_custo": False,
             "link_direto": latam_url
         },
@@ -77,23 +103,21 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
             "companhia": "Azul Linhas Aéreas",
             "programa": "Azul Fidelidade",
             "codigo": "AZU",
-            "cor": "sky",
-            "detalhes": f"Tarifa Azul básica ou resgate com pontos do programa",
-            "preco_reais": "R$ 598",
-            "preco_milhas": "19.500 pts",
+            "detalhes": f"Ver disponibilidade oficial da Azul na rota",
+            "preco_reais": "Consultar Trecho",
+            "preco_milhas": "Tabela Azul",
             "melhor_custo": False,
             "link_direto": azul_url
         },
         {
-            "companhia": "Google Flights / Menor Tarifa Geral",
-            "programa": "Multi-Companhias",
-            "codigo": "GOO",
-            "cor": "emerald",
-            "detalhes": f"Compara voos diretos e com conexão de todas as operadoras",
-            "preco_reais": "R$ 489",
-            "preco_milhas": "Consolidado R$",
+            "companhia": "Skyscanner Comparador",
+            "programa": "Agregador Global",
+            "codigo": "SKY",
+            "detalhes": f"Comparativo de companhias low-cost e agências de viagem",
+            "preco_reais": "Consultar Trecho",
+            "preco_milhas": "Em R$",
             "melhor_custo": False,
-            "link_direto": gf_url
+            "link_direto": sky_url
         }
     ]
 
@@ -102,8 +126,8 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
         name="passagens.html",
         context={
             "buscou": True,
-            "origem": origem,
-            "destino": destino,
+            "origem": origem_clean,
+            "destino": destino_clean,
             "data_ida": data_ida,
             "data_volta": data_volta,
             "resultados": resultados
