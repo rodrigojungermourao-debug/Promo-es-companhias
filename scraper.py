@@ -1,3 +1,24 @@
+import feedparser
+import requests
+from bs4 import BeautifulSoup
+from database import SessionLocal, Promocao
+
+def extrair_imagem_real(url, headers):
+    try:
+        resp = requests.get(url, headers=headers, timeout=5)
+        if resp.status_code == 200:
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            meta_img = soup.find("meta", property="og:image")
+            if meta_img and meta_img.get("content"):
+                return meta_img["content"]
+            
+            wp_img = soup.find("img", class_="wp-post-image")
+            if wp_img and wp_img.get("src"):
+                return wp_img["src"]
+    except Exception:
+        pass
+    return None
+
 def coletar_promocoes():
     db = SessionLocal()
 
@@ -14,12 +35,15 @@ def coletar_promocoes():
     }
 
     # Atualiza as promocoes que ja estao salvas no banco mas ainda estao sem imagem
-    sem_foto = db.query(Promocao).filter((Promocao.imagem == None) | (Promocao.imagem == "")).all()
-    for promo in sem_foto:
-        img = extrair_imagem_real(promo.link, headers)
-        if img:
-            promo.imagem = img
-    db.commit()
+    try:
+        sem_foto = db.query(Promocao).filter((Promocao.imagem == None) | (Promocao.imagem == "")).all()
+        for promo in sem_foto:
+            img = extrair_imagem_real(promo.link, headers)
+            if img:
+                promo.imagem = img
+        db.commit()
+    except Exception:
+        pass
 
     # Termos padrao de milhas e cartoes
     termos_milhas = ["livelo", "smiles", "esfera", "azul", "latam pass", "latam", "pontos", "milhas", "milheiro"]
@@ -43,7 +67,6 @@ def coletar_promocoes():
                 relevante_premmia = "premmia" in texto_completo and any(t in texto_completo for t in termos_premmia_bonus)
 
                 if relevante_geral or relevante_premmia:
-                    # Identifica a tag do programa
                     if "premmia" in texto_completo:
                         programa = "Premmia"
                     elif "livelo" in texto_completo:
@@ -59,7 +82,6 @@ def coletar_promocoes():
                     else:
                         programa = "Geral"
 
-                    # Salva no banco evitando duplicatas
                     existe = db.query(Promocao).filter(Promocao.link == link).first()
                     if not existe:
                         imagem_capa = extrair_imagem_real(link, headers)
@@ -77,3 +99,4 @@ def coletar_promocoes():
             continue
 
     db.close()
+    
