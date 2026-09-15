@@ -5,6 +5,57 @@ from bs4 import BeautifulSoup
 from sqlalchemy.exc import IntegrityError
 from database import SessionLocal, Promocao
 
+# ==========================================
+# CONFIGURAÇÃO DO TELEGRAM (Substitua aqui)
+# ==========================================
+TELEGRAM_TOKEN = "SEU_TOKEN_DO_BOTFATHER_AQUI"
+TELEGRAM_CHAT_ID = "SEU_CHAT_ID_AQUI"
+
+def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
+    """
+    Dispara notificação instantânea para o Telegram via API oficial.
+    """
+    if not TELEGRAM_TOKEN or "SEU_TOKEN" in TELEGRAM_TOKEN:
+        return
+
+    texto = (
+        f"🚨 <b>ALERTA DE PASSAGEM / TARIFA!</b> ✈️\n\n"
+        f"📌 <b>{titulo}</b>\n"
+    )
+    if preco_destaque:
+        texto += f"💰 <b>Preço Destaque:</b> {preco_destaque}\n"
+        
+    texto += f"\n🔗 <a href='{link}'>Clique aqui para ver a passagem</a>"
+
+    try:
+        if imagem and imagem.startswith("http"):
+            # Envia com foto
+            url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
+            payload = {
+                "chat_id": TELEGRAM_CHAT_ID,
+                "photo": imagem,
+                "caption": texto,
+                "parse_mode": "HTML"
+            }
+            resp = requests.post(url_api, data=payload, timeout=10)
+            if resp.status_code == 200:
+                print("[TELEGRAM] Notificação com foto enviada com sucesso!")
+                return
+        
+        # Fallback para mensagem de texto simples
+        url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": texto,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": False
+        }
+        requests.post(url_api, data=payload, timeout=10)
+        print("[TELEGRAM] Notificação enviada com sucesso!")
+    except Exception as e:
+        print(f"[TELEGRAM ERRO] Falha ao disparar: {e}")
+
+
 IMAGENS_PADRAO = {
     "Livelo": "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=600&auto=format&fit=crop&q=80",
     "Smiles": "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&auto=format&fit=crop&q=80",
@@ -20,7 +71,10 @@ def avaliar_oferta(titulo):
     vale = False
     preco_str = None
 
-    gatilhos_altos = ["menor preço", "histórico", "imperdível", "muito barato", "erro", "bug", "alerta", "barato de verdade"]
+    gatilhos_altos = [
+        "menor preço", "histórico", "imperdível", "muito barato", 
+        "erro", "bug", "alerta", "barato de verdade", "super desconto", "relâmpago", "relampago"
+    ]
     if any(g in t for g in gatilhos_altos):
         vale = True
 
@@ -42,12 +96,17 @@ def avaliar_oferta(titulo):
         try:
             qtd = int(match_milhas.group(1))
             preco_str = f"{qtd}k pts"
-            if qtd <= 10:
+            if qtd <= 12:
                 vale = True
         except ValueError:
             pass
 
-    return vale, preco_str
+    # Palavras de voos/passagens
+    palavras_passagem = ["passag", "voo", "aéreo", "aereo", "tarifa", "trecho", "ida e volta"]
+    eh_passagem = any(p in t for p in palavras_passagem)
+
+    # Vale a pena se for passagem e atender aos critérios
+    return (vale and eh_passagem), preco_str
 
 def extrair_imagem(entry, headers, programa):
     if "media_content" in entry and len(entry.media_content) > 0:
@@ -94,10 +153,10 @@ def coletar_promocoes():
     urls = [
         "https://www.melhoresdestinos.com.br/feed",
         "https://passageirodeprimeira.com/feed/?post_type=post",
+        "https://www.passagensimperdiveis.com.br/feed/",
         "https://www.melhorescartoes.com.br/feed",
         "https://pontospravoar.com/feed/",
-        "https://mestredasmilhas.com.br/feed/",
-        "https://www.passagensimperdiveis.com.br/feed/"
+        "https://mestredasmilhas.com.br/feed/"
     ]
 
     headers = {
@@ -153,6 +212,11 @@ def coletar_promocoes():
                     try:
                         db.add(nova)
                         db.commit()
+
+                        # DISPARO DO ALERTA NO TELEGRAM
+                        if vale_a_pena:
+                            enviar_alerta_telegram(titulo, link, preco_destaque, imagem)
+
                     except IntegrityError:
                         db.rollback()
                     except Exception:
