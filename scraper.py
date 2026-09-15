@@ -18,7 +18,6 @@ def coletar_promocoes():
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
     }
 
-    # Termos abrangentes de milhas, cartões e passagens aéreas
     termos_busca = [
         "milhas", "pontos", "milheiro", "livelo", "esfera", "smiles", 
         "latam", "latam pass", "azul", "tudoazul", "gol", "tap",
@@ -51,7 +50,6 @@ def coletar_promocoes():
 
                 texto = f"{titulo} {descricao}".lower()
 
-                # Regra do Premmia: apenas se envolver milhas ou pontos
                 if "premmia" in texto:
                     if not any(t in texto for t in ["smiles", "azul", "milhas", "pontos", "bônus", "bonus", "transferência"]):
                         continue
@@ -66,16 +64,12 @@ def coletar_promocoes():
                     programa = "LATAM Pass"
                 elif "azul" in texto or "tudoazul" in texto:
                     programa = "Azul"
-                elif any(t in texto for t in termos_busca):
-                    programa = "Geral"
                 else:
-                    # Se for feed especializado de milhas/viagens, aceita como Geral
                     programa = "Geral"
 
                 # Evita duplicidade
                 existe = db.query(Promocao).filter(Promocao.link == link).first()
                 if not existe:
-                    # Pega a imagem do feed se existir
                     imagem = None
                     if "media_content" in entry and len(entry.media_content) > 0:
                         imagem = entry.media_content[0].get("url")
@@ -85,10 +79,10 @@ def coletar_promocoes():
                                 imagem = l.get("href")
                                 break
 
+                    # Cria o objeto sem campos inexistentes no modelo
                     nova = Promocao(
                         titulo=titulo,
                         link=link,
-                        descricao=descricao[:300] if descricao else "",
                         data_publicacao=data_publicacao,
                         programa=programa,
                         imagem=imagem
@@ -101,6 +95,6 @@ def coletar_promocoes():
             print(f"[SCRAPER ERROR] Falha ao processar {url}: {e}")
             continue
 
-    print(f"[SCRAPER] Total de novas promoções inseridas: {total_novas}")
+    print(f"[SCRAPER] Total de novas promoções inseridas com sucesso: {total_novas}")
     db.close()
     
