@@ -28,39 +28,93 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Barra de Programas com Logotipos Oficiais Corrigidos -->
+        <!-- Barra de Programas com Logos Oficiais Estilizados -->
         <div class="flex items-center gap-2.5 overflow-x-auto pb-4 mb-6 border-b border-slate-200 text-sm scrollbar-none">
-            {% set programas_info = [
-                {"nome": "Todos", "logo": "", "icon": "fa-solid fa-layer-group"},
-                {"nome": "Smiles", "logo": "https://logodownload.org/wp-content/uploads/2019/08/smiles-logo-1.png", "icon": ""},
-                {"nome": "Livelo", "logo": "https://www.google.com/s2/favicons?domain=livelo.com.br&sz=64", "icon": ""},
-                {"nome": "Esfera", "logo": "https://www.google.com/s2/favicons?domain=esfera.com.vc&sz=64", "icon": ""},
-                {"nome": "LATAM Pass", "logo": "https://www.google.com/s2/favicons?domain=latamairlines.com&sz=64", "icon": ""},
-                {"nome": "Azul", "logo": "https://seeklogo.com/images/A/azul-linhas-aereas-logo-E3197FF802-seeklogo.com.png", "icon": ""},
-                {"nome": "Premmia", "logo": "https://www.google.com/s2/favicons?domain=petrobraspremmia.com.br&sz=64", "icon": ""}
-            ] %}
+            
+            <!-- Botão: Todos -->
+            {% set ativo_todos = not programa_ativo or programa_ativo == 'Todos' %}
+            <a href="/" class="px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition flex items-center gap-2 {% if ativo_todos %}bg-slate-900 text-white shadow-sm{% else %}bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-xs{% endif %}">
+                <i class="fa-solid fa-layer-group text-xs opacity-80"></i>
+                <span>Todos</span>
+                {% if novos.get('Todos', 0) > 0 %}
+                    <span class="px-2 py-0.5 text-[10px] rounded-full {% if ativo_todos %}bg-rose-500 text-white{% else %}bg-rose-100 text-rose-700 font-black{% endif %}">
+                        +{{ novos.get('Todos') }}
+                    </span>
+                {% endif %}
+            </a>
 
-            {% for item in programas_info %}
-                {% set prog = item.nome %}
-                {% set ativo = (programa_ativo == prog) or (prog == 'Todos' and not programa_ativo) %}
-                <a href="{% if prog == 'Todos' %}/{% else %}?programa={{ prog }}{% endif %}"
-                   class="px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition flex items-center gap-2 {% if ativo %}bg-slate-900 text-white shadow-sm{% else %}bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-xs{% endif %}">
-                    
-                    {% if item.logo %}
-                        <img src="{{ item.logo }}" alt="{{ prog }}" class="w-4 h-4 object-contain shrink-0">
-                    {% else %}
-                        <i class="{{ item.icon }} text-xs opacity-80"></i>
-                    {% endif %}
+            <!-- Botão: Smiles (Laranja GOL/Smiles) -->
+            {% set ativo_smiles = programa_ativo == 'Smiles' %}
+            <a href="?programa=Smiles" class="px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition flex items-center gap-2 {% if ativo_smiles %}bg-slate-900 text-white shadow-sm{% else %}bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-xs{% endif %}">
+                <span class="w-4 h-4 rounded-full bg-[#FF6600] text-white flex items-center justify-center text-[9px] font-black shrink-0 shadow-xs">S</span>
+                <span>Smiles</span>
+                {% if novos.get('Smiles', 0) > 0 %}
+                    <span class="px-2 py-0.5 text-[10px] rounded-full {% if ativo_smiles %}bg-rose-500 text-white{% else %}bg-rose-100 text-rose-700 font-black{% endif %}">
+                        +{{ novos.get('Smiles') }}
+                    </span>
+                {% endif %}
+            </a>
 
-                    <span>{{ prog }}</span>
+            <!-- Botão: Livelo (Logo Oficial via Google CDN) -->
+            {% set ativo_livelo = programa_ativo == 'Livelo' %}
+            <a href="?programa=Livelo" class="px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition flex items-center gap-2 {% if ativo_livelo %}bg-slate-900 text-white shadow-sm{% else %}bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-xs{% endif %}">
+                <img src="https://www.google.com/s2/favicons?domain=livelo.com.br&sz=64" alt="Livelo" class="w-4 h-4 object-contain shrink-0">
+                <span>Livelo</span>
+                {% if novos.get('Livelo', 0) > 0 %}
+                    <span class="px-2 py-0.5 text-[10px] rounded-full {% if ativo_livelo %}bg-rose-500 text-white{% else %}bg-rose-100 text-rose-700 font-black{% endif %}">
+                        +{{ novos.get('Livelo') }}
+                    </span>
+                {% endif %}
+            </a>
 
-                    {% if novos.get(prog, 0) > 0 %}
-                        <span class="px-2 py-0.5 text-[10px] rounded-full {% if ativo %}bg-rose-500 text-white{% else %}bg-rose-100 text-rose-700 font-black{% endif %}">
-                            +{{ novos.get(prog) }}
-                        </span>
-                    {% endif %}
-                </a>
-            {% endfor %}
+            <!-- Botão: Esfera (Vermelho Santander/Esfera) -->
+            {% set ativo_esfera = programa_ativo == 'Esfera' %}
+            <a href="?programa=Esfera" class="px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition flex items-center gap-2 {% if ativo_esfera %}bg-slate-900 text-white shadow-sm{% else %}bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-xs{% endif %}">
+                <span class="w-4 h-4 rounded-full bg-[#CC0000] text-white flex items-center justify-center text-[9px] font-black shrink-0 shadow-xs">E</span>
+                <span>Esfera</span>
+                {% if novos.get('Esfera', 0) > 0 %}
+                    <span class="px-2 py-0.5 text-[10px] rounded-full {% if ativo_esfera %}bg-rose-500 text-white{% else %}bg-rose-100 text-rose-700 font-black{% endif %}">
+                        +{{ novos.get('Esfera') }}
+                    </span>
+                {% endif %}
+            </a>
+
+            <!-- Botão: LATAM Pass (Logo Oficial via Google CDN) -->
+            {% set ativo_latam = programa_ativo == 'LATAM Pass' %}
+            <a href="?programa=LATAM Pass" class="px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition flex items-center gap-2 {% if ativo_latam %}bg-slate-900 text-white shadow-sm{% else %}bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-xs{% endif %}">
+                <img src="https://www.google.com/s2/favicons?domain=latamairlines.com&sz=64" alt="LATAM" class="w-4 h-4 object-contain shrink-0">
+                <span>LATAM Pass</span>
+                {% if novos.get('LATAM Pass', 0) > 0 %}
+                    <span class="px-2 py-0.5 text-[10px] rounded-full {% if ativo_latam %}bg-rose-500 text-white{% else %}bg-rose-100 text-rose-700 font-black{% endif %}">
+                        +{{ novos.get('LATAM Pass') }}
+                    </span>
+                {% endif %}
+            </a>
+
+            <!-- Botão: Azul (Azul Marinho Oficial) -->
+            {% set ativo_azul = programa_ativo == 'Azul' %}
+            <a href="?programa=Azul" class="px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition flex items-center gap-2 {% if ativo_azul %}bg-slate-900 text-white shadow-sm{% else %}bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-xs{% endif %}">
+                <span class="w-4 h-4 rounded-full bg-[#00205B] text-white flex items-center justify-center text-[9px] font-black shrink-0 shadow-xs">A</span>
+                <span>Azul</span>
+                {% if novos.get('Azul', 0) > 0 %}
+                    <span class="px-2 py-0.5 text-[10px] rounded-full {% if ativo_azul %}bg-rose-500 text-white{% else %}bg-rose-100 text-rose-700 font-black{% endif %}">
+                        +{{ novos.get('Azul') }}
+                    </span>
+                {% endif %}
+            </a>
+
+            <!-- Botão: Premmia (Logo Oficial via Google CDN) -->
+            {% set ativo_premmia = programa_ativo == 'Premmia' %}
+            <a href="?programa=Premmia" class="px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition flex items-center gap-2 {% if ativo_premmia %}bg-slate-900 text-white shadow-sm{% else %}bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-xs{% endif %}">
+                <img src="https://www.google.com/s2/favicons?domain=petrobraspremmia.com.br&sz=64" alt="Premmia" class="w-4 h-4 object-contain shrink-0">
+                <span>Premmia</span>
+                {% if novos.get('Premmia', 0) > 0 %}
+                    <span class="px-2 py-0.5 text-[10px] rounded-full {% if ativo_premmia %}bg-rose-500 text-white{% else %}bg-rose-100 text-rose-700 font-black{% endif %}">
+                        +{{ novos.get('Premmia') }}
+                    </span>
+                {% endif %}
+            </a>
+
         </div>
 
         <!-- Grade de Promoções -->
