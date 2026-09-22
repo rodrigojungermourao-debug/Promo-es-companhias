@@ -1,4 +1,5 @@
-from sqlalchemy import create_engine, Column, Integer, String, Boolean
+from datetime import datetime
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -19,5 +20,14 @@ class Promocao(Base):
     imagem = Column(String, nullable=True)
     vale_a_pena = Column(Boolean, default=False)
     preco_destaque = Column(String, nullable=True)
+    data_criacao = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
+
+# Garante que a coluna data_criacao exista mesmo numa base de dados SQLite já criada
+try:
+    with engine.connect() as conn:
+        conn.execute(text("ALTER TABLE promocoes ADD COLUMN data_criacao DATETIME"))
+        conn.commit()
+except Exception:
+    pass

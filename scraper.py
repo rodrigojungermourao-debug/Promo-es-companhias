@@ -1,20 +1,15 @@
 import re
+from datetime import datetime
 import feedparser
 import requests
 from bs4 import BeautifulSoup
 from sqlalchemy.exc import IntegrityError
 from database import SessionLocal, Promocao
 
-# ==========================================
-# CONFIGURAÇÃO DO TELEGRAM (Substitua aqui)
-# ==========================================
 TELEGRAM_TOKEN = "SEU_TOKEN_DO_BOTFATHER_AQUI"
 TELEGRAM_CHAT_ID = "SEU_CHAT_ID_AQUI"
 
 def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
-    """
-    Dispara notificação instantânea para o Telegram via API oficial.
-    """
     if not TELEGRAM_TOKEN or "SEU_TOKEN" in TELEGRAM_TOKEN:
         return
 
@@ -29,7 +24,6 @@ def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
 
     try:
         if imagem and imagem.startswith("http"):
-            # Envia com foto
             url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
             payload = {
                 "chat_id": TELEGRAM_CHAT_ID,
@@ -39,10 +33,8 @@ def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
             }
             resp = requests.post(url_api, data=payload, timeout=10)
             if resp.status_code == 200:
-                print("[TELEGRAM] Notificação com foto enviada com sucesso!")
                 return
         
-        # Fallback para mensagem de texto simples
         url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
         payload = {
             "chat_id": TELEGRAM_CHAT_ID,
@@ -51,9 +43,8 @@ def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
             "disable_web_page_preview": False
         }
         requests.post(url_api, data=payload, timeout=10)
-        print("[TELEGRAM] Notificação enviada com sucesso!")
     except Exception as e:
-        print(f"[TELEGRAM ERRO] Falha ao disparar: {e}")
+        print(f"[TELEGRAM ERRO]: {e}")
 
 
 IMAGENS_PADRAO = {
@@ -71,11 +62,11 @@ def avaliar_oferta(titulo):
     vale = False
     preco_str = None
 
-    gatilhos_altos = [
+    gatilhos = [
         "menor preço", "histórico", "imperdível", "muito barato", 
         "erro", "bug", "alerta", "barato de verdade", "super desconto", "relâmpago", "relampago"
     ]
-    if any(g in t for g in gatilhos_altos):
+    if any(g in t for g in gatilhos):
         vale = True
 
     match_reais = re.search(r'r\$\s?(\d+[\.,]?\d*)', t)
@@ -101,11 +92,9 @@ def avaliar_oferta(titulo):
         except ValueError:
             pass
 
-    # Palavras de voos/passagens
     palavras_passagem = ["passag", "voo", "aéreo", "aereo", "tarifa", "trecho", "ida e volta"]
     eh_passagem = any(p in t for p in palavras_passagem)
 
-    # Vale a pena se for passagem e atender aos critérios
     return (vale and eh_passagem), preco_str
 
 def extrair_imagem(entry, headers, programa):
@@ -145,7 +134,6 @@ def extrair_imagem(entry, headers, programa):
         pass
 
     return IMAGENS_PADRAO.get(programa, IMAGENS_PADRAO["Geral"])
-
 
 def coletar_promocoes():
     db = SessionLocal()
@@ -207,13 +195,13 @@ def coletar_promocoes():
                         programa=programa,
                         imagem=imagem,
                         vale_a_pena=vale_a_pena,
-                        preco_destaque=preco_destaque
+                        preco_destaque=preco_destaque,
+                        data_criacao=datetime.utcnow()
                     )
                     try:
                         db.add(nova)
                         db.commit()
 
-                        # DISPARO DO ALERTA NO TELEGRAM
                         if vale_a_pena:
                             enviar_alerta_telegram(titulo, link, preco_destaque, imagem)
 
@@ -221,20 +209,6 @@ def coletar_promocoes():
                         db.rollback()
                     except Exception:
                         db.rollback()
-                else:
-                    alterou = False
-                    if not promo.imagem:
-                        promo.imagem = extrair_imagem(entry, headers, programa)
-                        alterou = True
-                    if not promo.preco_destaque and preco_destaque:
-                        promo.preco_destaque = preco_destaque
-                        promo.vale_a_pena = vale_a_pena
-                        alterou = True
-                    if alterou:
-                        try:
-                            db.commit()
-                        except Exception:
-                            db.rollback()
 
         except Exception as e:
             print(f"[SCRAPER ERROR] {url}: {e}")
