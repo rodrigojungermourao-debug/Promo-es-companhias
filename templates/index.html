@@ -28,16 +28,34 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Barra de Programas de Fidelidade -->
-        <div class="flex items-center gap-2 overflow-x-auto pb-4 mb-6 border-b border-slate-200 text-sm scrollbar-none">
-            {% set programas = ["Todos", "Smiles", "Livelo", "Esfera", "LATAM Pass", "Azul", "Premmia"] %}
-            {% for prog in programas %}
+        <!-- Barra de Programas com Logótipos -->
+        <div class="flex items-center gap-2.5 overflow-x-auto pb-4 mb-6 border-b border-slate-200 text-sm scrollbar-none">
+            {% set programas_info = [
+                {"nome": "Todos", "logo": "", "icon": "fa-solid fa-layer-group"},
+                {"nome": "Smiles", "logo": "https://www.google.com/s2/favicons?domain=smiles.com.br&sz=64"},
+                {"nome": "Livelo", "logo": "https://www.google.com/s2/favicons?domain=livelo.com.br&sz=64"},
+                {"nome": "Esfera", "logo": "https://www.google.com/s2/favicons?domain=esfera.com.vc&sz=64"},
+                {"nome": "LATAM Pass", "logo": "https://www.google.com/s2/favicons?domain=latamairlines.com&sz=64"},
+                {"nome": "Azul", "logo": "https://www.google.com/s2/favicons?domain=voeazul.com.br&sz=64"},
+                {"nome": "Premmia", "logo": "https://www.google.com/s2/favicons?domain=petrobraspremmia.com.br&sz=64"}
+            ] %}
+
+            {% for item in programas_info %}
+                {% set prog = item.nome %}
                 {% set ativo = (programa_ativo == prog) or (prog == 'Todos' and not programa_ativo) %}
                 <a href="{% if prog == 'Todos' %}/{% else %}?programa={{ prog }}{% endif %}"
-                   class="px-4 py-2 rounded-xl font-bold whitespace-nowrap transition flex items-center gap-2 {% if ativo %}bg-slate-900 text-white shadow-sm{% else %}bg-white text-slate-600 hover:bg-slate-100 border border-slate-200{% endif %}">
-                    {{ prog }}
+                   class="px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition flex items-center gap-2 {% if ativo %}bg-slate-900 text-white shadow-sm{% else %}bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-xs{% endif %}">
+                    
+                    {% if item.logo %}
+                        <img src="{{ item.logo }}" alt="{{ prog }}" class="w-4 h-4 rounded-full object-contain bg-white shrink-0">
+                    {% else %}
+                        <i class="{{ item.icon }} text-xs opacity-80"></i>
+                    {% endif %}
+
+                    <span>{{ prog }}</span>
+
                     {% if novos.get(prog, 0) > 0 %}
-                        <span class="px-2 py-0.5 text-[10px] rounded-full {% if ativo %}bg-rose-500 text-white{% else %}bg-rose-100 text-rose-700 font-extrabold{% endif %}">
+                        <span class="px-2 py-0.5 text-[10px] rounded-full {% if ativo %}bg-rose-500 text-white{% else %}bg-rose-100 text-rose-700 font-black{% endif %}">
                             +{{ novos.get(prog) }}
                         </span>
                     {% endif %}
