@@ -1,155 +1,138 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comparador de Voos - RadarMilhas</title>
+    <title>Buscar Voos - Google Flights Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
-
-    <!-- Header -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <a href="/" class="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition" title="Voltar para Promoções">
-                    <i class="fa-solid fa-arrow-left text-lg"></i>
-                </a>
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-plane-departure text-orange-500 text-2xl"></i>
-                    <span class="font-black text-xl text-slate-900 tracking-tight">Comparador de Voos</span>
+<body class="bg-gray-100 min-h-screen text-slate-800 antialiased">
+    <!-- Navbar -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid fa-plane-departure text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black tracking-tight text-slate-900">Radar<span class="text-indigo-600">Voos</span></h1>
+                    <p class="text-xs text-slate-500 font-medium">Pesquisa de passagens estilo Google Flights</p>
                 </div>
             </div>
-            <a href="/" class="text-sm font-semibold text-slate-600 hover:text-blue-600 transition">
-                Promoções de Milhas
+            <a href="/" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i> Voltar às Promoções
             </a>
         </div>
     </header>
 
-    <main class="max-w-5xl mx-auto px-4 py-8 flex-1 w-full flex flex-col">
+    <main class="max-w-5xl mx-auto px-4 py-8">
         <!-- Caixa de Busca -->
-        <div class="bg-white rounded-3xl p-6 shadow-xl border border-slate-200/80 mb-8">
-            <h1 class="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
-                <i class="fa-brands fa-google text-blue-500"></i> Buscar voos pelo Google Flights
-            </h1>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 mb-8">
+            <div class="flex items-center gap-2 mb-4">
+                <svg class="w-6 h-6 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                </svg>
+                <h2 class="text-lg font-bold text-slate-900">Buscar voos no Google Flights</h2>
+            </div>
 
-            <form action="/passagens/buscar" method="GET" class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
-                
-                <!-- Origem e Destino -->
-                <div class="lg:col-span-6 relative flex flex-col sm:flex-row items-center gap-2">
-                    <div class="w-full border border-slate-300 rounded-2xl px-4 py-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200 bg-white transition">
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Origem</label>
-                        <input type="text" name="origem" value="{{ origem }}" placeholder="Cidade de saída (ex: RIO)" required
-                               class="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none">
-                    </div>
-
-                    <button type="button" onclick="inverterDestinos()" class="z-10 p-2.5 bg-white border border-slate-200 text-slate-500 hover:text-orange-500 rounded-full shadow-sm hover:scale-110 transition shrink-0 -my-2 sm:-my-0 sm:-mx-3">
-                        <i class="fa-solid fa-arrow-right-arrow-left text-xs"></i>
-                    </button>
-
-                    <div class="w-full border border-slate-300 rounded-2xl px-4 py-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200 bg-white transition">
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Destino</label>
-                        <input type="text" name="destino" value="{{ destino }}" placeholder="Destino (ex: FOR)" required
-                               class="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none">
-                    </div>
+            <form action="/passagens/buscar" method="get" class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                <div class="md:col-span-3">
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Origem</label>
+                    <input type="text" name="origem" value="{{ origem or 'São Paulo (GRU)' }}" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
-                <!-- Datas -->
-                <div class="lg:col-span-4 border border-slate-300 rounded-2xl p-2 bg-white flex items-center divide-x divide-slate-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200 transition">
-                    <div class="w-1/2 px-3 py-0.5">
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ida</label>
-                        <input type="date" name="data_ida" value="{{ data_ida }}" required
-                               class="w-full bg-transparent text-xs font-semibold text-slate-800 outline-none">
-                    </div>
-                    <div class="w-1/2 px-3 py-0.5">
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Volta (Opcional)</label>
-                        <input type="date" name="data_volta" value="{{ data_volta }}"
-                               class="w-full bg-transparent text-xs font-semibold text-slate-800 outline-none">
-                    </div>
+                <div class="md:col-span-3">
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Destino</label>
+                    <input type="text" name="destino" value="{{ destino or 'Recife (REC)' }}" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
-                <!-- Botão Buscar -->
-                <div class="lg:col-span-2">
-                    <button type="submit" class="w-full h-14 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold text-base rounded-2xl shadow-lg shadow-orange-500/30 active:scale-[0.98] transition flex items-center justify-center gap-2">
-                        <span>Buscar voos</span>
-                        <i class="fa-solid fa-arrow-right text-sm"></i>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Ida</label>
+                    <input type="date" name="data_ida" value="{{ data_ida or '' }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Volta (Opcional)</label>
+                    <input type="date" name="data_volta" value="{{ data_volta or '' }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="md:col-span-2">
+                    <button type="submit" class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition shadow text-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-magnifying-glass"></i> Buscar
                     </button>
                 </div>
-
             </form>
         </div>
 
-        <!-- Card de Resultado -->
         {% if buscou %}
+        <!-- Resultados idênticos ao Google Flights -->
         <div class="space-y-4">
-            <div class="flex items-center justify-between px-1">
-                <h2 class="text-xl font-black text-slate-900">
-                    Rota Selecionada: <span class="text-orange-600">{{ origem }} ({{ orig_iata }}) ➔ {{ destino }} ({{ dest_iata }})</span>
-                </h2>
-                <span class="text-xs font-bold text-slate-500 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
-                    Ida: {{ data_ida }} {% if data_volta %}| Volta: {{ data_volta }}{% endif %}
-                </span>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-gray-200">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Principais voos de ida</h3>
+                    <p class="text-xs text-slate-500">Preços totais para 1 passageiro adulto com taxas incluídas.</p>
+                </div>
+                {% if link_gf %}
+                <a href="{{ link_gf }}" target="_blank" class="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 mt-2 sm:mt-0">
+                    Abrir no Google Flights oficial <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                </a>
+                {% endif %}
             </div>
 
-            <!-- Card de Destaque Google Flights -->
-            <div class="bg-white rounded-3xl p-6 sm:p-7 border-2 border-emerald-400 ring-2 ring-emerald-400/20 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6">
-                
-                <div class="flex items-center gap-5">
-                    <div class="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center text-3xl font-black shrink-0">
-                        <i class="fa-brands fa-google"></i>
-                    </div>
-                    <div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="font-black text-xl text-slate-900">Google Flights</span>
-                            <span class="bg-emerald-600 text-white text-[11px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm uppercase tracking-wide">
-                                <i class="fa-solid fa-trophy text-amber-300"></i> MELHOR CUSTO-BENEFÍCIO
-                            </span>
+            <!-- Lista de Voos -->
+            <div class="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 shadow-sm overflow-hidden">
+                {% for voo in voos %}
+                <div class="p-4 hover:bg-gray-50 transition flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <!-- Companhia e Horários -->
+                    <div class="flex items-center gap-4 min-w-[260px]">
+                        <div class="w-12 h-10 flex items-center justify-center">
+                            <span class="font-extrabold text-sm {{ voo.cor_logo }}">{{ voo.cia }}</span>
                         </div>
-                        <p class="text-xs text-slate-500 mt-1">
-                            Consulta em tempo real de todas as operadoras (LATAM, GOL, Azul) para o trecho <b>{{ orig_iata }} ➔ {{ dest_iata }}</b> nas datas indicadas.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 pt-4 md:pt-0">
-                    <div class="text-right">
-                        <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Tarifas Atuais</span>
-                        <div class="flex items-baseline justify-end gap-2">
-                            <span class="text-lg font-black text-slate-900">Tempo Real</span>
-                            <span class="text-xs font-bold text-slate-400">/</span>
-                            <span class="text-xs font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">GOL, LATAM & Azul</span>
+                        <div>
+                            <div class="text-base font-bold text-slate-900">{{ voo.horario_partida }} – {{ voo.horario_chegada }}</div>
+                            <div class="text-xs text-slate-500">{{ voo.cia }} • {{ voo.operado_por }}</div>
                         </div>
                     </div>
 
-                    <a href="{{ link_gf }}" target="_blank" rel="noopener noreferrer" 
-                       class="bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-sm px-6 py-4 rounded-2xl shadow-lg shadow-orange-500/25 active:scale-95 transition flex items-center gap-2 shrink-0">
-                        <span>Ver Voos</span>
-                        <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
-                    </a>
-                </div>
+                    <!-- Duração e Escalas -->
+                    <div class="text-left md:text-center min-w-[140px]">
+                        <div class="text-sm font-semibold text-slate-800">{{ voo.duracao }}</div>
+                        <div class="text-xs text-slate-500 font-medium">{{ voo.rota }}</div>
+                    </div>
 
+                    <!-- Tipo de Parada -->
+                    <div class="text-left min-w-[120px]">
+                        <div class="text-sm font-medium {% if 'Sem paradas' in voo.paradas or 'Sem escalas' in voo.paradas %}text-emerald-600 font-semibold{% else %}text-amber-600{% endif %}">
+                            {{ voo.paradas }}
+                        </div>
+                    </div>
+
+                    <!-- Emissões -->
+                    <div class="hidden lg:block text-left text-xs text-slate-400 min-w-[120px]">
+                        <div>{{ voo.emissoes }}</div>
+                        <div class="text-[10px] text-slate-400">{{ voo.emissoes_detalhe }}</div>
+                    </div>
+
+                    <!-- Preço e Botão de Ação -->
+                    <div class="text-right min-w-[140px] ml-auto flex md:flex-col items-center md:items-end justify-between w-full md:w-auto">
+                        <div>
+                            <div class="text-lg font-black text-emerald-600">R$ {{ voo.preco }}</div>
+                            <div class="text-[11px] text-slate-400">ida e volta</div>
+                        </div>
+                        <a href="{{ link_gf }}" target="_blank" class="mt-1 text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md font-bold hover:bg-blue-100 transition">
+                            Selecionar
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
-        </div>
-        {% else %}
-        <div class="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center justify-center">
-            <div class="w-16 h-16 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center text-2xl mb-3">
-                <i class="fa-solid fa-plane"></i>
-            </div>
-            <h3 class="text-lg font-black text-slate-800">Preencha os dados acima</h3>
-            <p class="text-slate-500 text-sm mt-1 max-w-md">O sistema abrirá a pesquisa de todas as operadoras no Google Flights com rota e datas prontas.</p>
         </div>
         {% endif %}
     </main>
-
-    <script>
-        function inverterDestinos() {
-            const origem = document.getElementsByName('origem')[0];
-            const destino = document.getElementsByName('destino')[0];
-            const temp = origem.value;
-            origem.value = destino.value;
-            destino.value = temp;
-        }
-    </script>
 </body>
 </html>

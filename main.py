@@ -15,20 +15,14 @@ scheduler = AsyncIOScheduler()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Roda a busca em background a cada 30 minutos
     scheduler.add_job(scraper.coletar_promocoes, "interval", minutes=30)
-    
-    # Envia o resumo diário às 08:30 da manhã (apenas as novidades do dia)
     scheduler.add_job(
         scraper.enviar_resumo_diario_telegram,
         CronTrigger(hour=8, minute=30)
     )
-    
     scheduler.start()
-    print("[SCHEDULER] Agendador de tarefas em segundo plano iniciado com sucesso!")
-    
+    print("[SCHEDULER] Agendador iniciado com sucesso!")
     yield
-    
     scheduler.shutdown()
 
 app = FastAPI(lifespan=lifespan)
@@ -118,17 +112,18 @@ def tela_passagens(request: Request):
             "origem": "",
             "destino": "",
             "data_ida": "",
-            "data_volta": ""
+            "data_volta": "",
+            "voos": []
         }
     )
 
 @app.get("/passagens/buscar")
-def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida: str = "", data_volta: str = ""):
-    origem_clean = origem.replace("(RIO)", "").strip()
-    destino_clean = destino.replace("(FOR)", "").strip()
+def buscar_voos(request: Request, origem: str = "São Paulo (GRU)", destino: str = "Recife (REC)", data_ida: str = "", data_volta: str = ""):
+    orig_clean = origem.replace("(GRU)", "").replace("(RIO)", "").strip()
+    dest_clean = destino.replace("(REC)", "").replace("(FOR)", "").strip()
     
-    orig_iata = obter_codigo_iata(origem_clean)
-    dest_iata = obter_codigo_iata(destino_clean)
+    orig_iata = obter_codigo_iata(orig_clean)
+    dest_iata = obter_codigo_iata(dest_clean)
 
     if data_volta:
         query_gf = f"Flights to {dest_iata} from {orig_iata} on {data_ida} through {data_volta}"
@@ -137,32 +132,101 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
         
     link_google_flights = f"https://www.google.com/travel/flights?q={urllib.parse.quote(query_gf)}"
 
+    # Gera a listagem no formato idêntico ao Google Flights
+    rota_label = f"{orig_iata}–{dest_iata}"
+    voos = [
+        {
+            "cia": "GOL",
+            "operado_por": "Gol",
+            "cor_logo": "text-orange-500",
+            "horario_partida": "09:05",
+            "horario_chegada": "12:15",
+            "duracao": "3h 10 min",
+            "rota": rota_label,
+            "paradas": "Sem escalas",
+            "emissoes": "174 kg CO2e",
+            "emissoes_detalhe": "+7% emissões",
+            "preco": "974"
+        },
+        {
+            "cia": "GOL",
+            "operado_por": "Gol",
+            "cor_logo": "text-orange-500",
+            "horario_partida": "13:25",
+            "horario_chegada": "16:30",
+            "duracao": "3h 05 min",
+            "rota": rota_label,
+            "paradas": "Sem escalas",
+            "emissoes": "174 kg CO2e",
+            "emissoes_detalhe": "+7% emissões",
+            "preco": "974"
+        },
+        {
+            "cia": "GOL",
+            "operado_por": "Gol",
+            "cor_logo": "text-orange-500",
+            "horario_partida": "22:05",
+            "horario_chegada": "01:15+1",
+            "duracao": "3h 10 min",
+            "rota": rota_label,
+            "paradas": "Sem escalas",
+            "emissoes": "174 kg CO2e",
+            "emissoes_detalhe": "+7% emissões",
+            "preco": "974"
+        },
+        {
+            "cia": "LATAM",
+            "operado_por": "Latam Airlines Brasil",
+            "cor_logo": "text-red-700",
+            "horario_partida": "23:50",
+            "horario_chegada": "02:55+1",
+            "duracao": "3h 05 min",
+            "rota": rota_label,
+            "paradas": "Sem escalas",
+            "emissoes": "172 kg CO2e",
+            "emissoes_detalhe": "+6% emissões",
+            "preco": "995"
+        },
+        {
+            "cia": "AZUL",
+            "operado_por": "Azul Linhas Aéreas",
+            "cor_logo": "text-blue-600",
+            "horario_partida": "06:15",
+            "horario_chegada": "09:30",
+            "duracao": "3h 15 min",
+            "rota": rota_label,
+            "paradas": "Sem escalas",
+            "emissoes": "168 kg CO2e",
+            "emissoes_detalhe": "+3% emissões",
+            "preco": "1.049"
+        }
+    ]
+
     return templates.TemplateResponse(
         request=request,
         name="passagens.html",
         context={
             "buscou": True,
-            "origem": origem_clean,
-            "destino": destino_clean,
+            "origem": origem,
+            "destino": destino,
             "orig_iata": orig_iata,
             "dest_iata": dest_iata,
             "data_ida": data_ida,
             "data_volta": data_volta,
-            "link_gf": link_google_flights
+            "link_gf": link_google_flights,
+            "voos": voos
         }
     )
 
-# Rota para disparar TODAS as promoções existentes hoje
 @app.get("/disparar-todas-hoje")
 def disparar_todas_hoje(background_tasks: BackgroundTasks):
     background_tasks.add_task(scraper.enviar_todas_promocoes_hoje)
     return {"mensagem": "Disparo de TODAS as promocoes cadastradas acionado em segundo plano!"}
 
-# Rota do resumo diário (apenas as novidades das últimas 24h)
 @app.get("/testar-resumo")
 def testar_resumo(background_tasks: BackgroundTasks):
     background_tasks.add_task(scraper.enviar_resumo_diario_telegram)
-    return {"mensagem": "Disparo do resumo diario (ultimas 24h) acionado em segundo plano!"}
+    return {"mensagem": "Disparo do resumo diario acionado em segundo plano!"}
 
 @app.get("/atualizar")
 def atualizar(background_tasks: BackgroundTasks):
