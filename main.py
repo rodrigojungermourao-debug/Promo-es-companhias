@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI):
     # Roda a busca em background a cada 30 minutos
     scheduler.add_job(scraper.coletar_promocoes, "interval", minutes=30)
     
-    # Envia o resumo matinal no Telegram todos os dias às 08:30 da manhã
+    # Envia o resumo diário às 08:30 da manhã (apenas as novidades do dia)
     scheduler.add_job(
         scraper.enviar_resumo_diario_telegram,
         CronTrigger(hour=8, minute=30)
@@ -152,10 +152,17 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
         }
     )
 
+# Rota para disparar TODAS as promoções existentes hoje
+@app.get("/disparar-todas-hoje")
+def disparar_todas_hoje(background_tasks: BackgroundTasks):
+    background_tasks.add_task(scraper.enviar_todas_promocoes_hoje)
+    return {"mensagem": "Disparo de TODAS as promocoes cadastradas acionado em segundo plano!"}
+
+# Rota do resumo diário (apenas as novidades das últimas 24h)
 @app.get("/testar-resumo")
 def testar_resumo(background_tasks: BackgroundTasks):
     background_tasks.add_task(scraper.enviar_resumo_diario_telegram)
-    return {"mensagem": "Disparo do resumo diario acionado em segundo plano!"}
+    return {"mensagem": "Disparo do resumo diario (ultimas 24h) acionado em segundo plano!"}
 
 @app.get("/atualizar")
 def atualizar(background_tasks: BackgroundTasks):

@@ -7,13 +7,89 @@ from sqlalchemy.exc import IntegrityError
 from database import SessionLocal, Promocao
 
 # ==========================================
-# CREDENCIAIS CONFIGURADAS DO TELEGRAM
+# CREDENCIAIS DO TELEGRAM
 # ==========================================
 TELEGRAM_TOKEN = "8946417053:AAHxzBiHG6glT6b8he23gjNgdasKmFY2EVA"
 TELEGRAM_CHAT_ID = "8655754996"
 
+def enviar_mensagem_telegram(texto):
+    """Envia uma mensagem de texto via Telegram API."""
+    if not TELEGRAM_TOKEN or "SEU_TOKEN" in TELEGRAM_TOKEN:
+        return
+    try:
+        url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": texto,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True
+        }
+        requests.post(url_api, data=payload, timeout=10)
+    except Exception as e:
+        print(f"[TELEGRAM ERRO]: {e}")
+
+def enviar_todas_promocoes_hoje():
+    """Coleta e dispara absolutamente TODAS as promoções do banco divididas em blocos."""
+    coletar_promocoes()
+    
+    db = SessionLocal()
+    todas = db.query(Promocao).order_by(Promocao.id.desc()).all()
+    db.close()
+
+    if not todas:
+        enviar_mensagem_telegram("Nenhuma promoção encontrada no banco no momento.")
+        return
+
+    enviar_mensagem_telegram(f"📦 <b>INVENTÁRIO COMPLETO DE PROMOÇÕES</b>\nEnviando todas as {len(todas)} ofertas cadastradas...")
+
+    # Divide em blocos de 8 para não estourar o limite de 4096 caracteres do Telegram
+    bloco = []
+    for item in todas:
+        bloco.append(f"📌 <b>{item.programa}:</b>\n{item.titulo}\n🔗 {item.link}\n")
+        if len(bloco) == 8:
+            texto = "\n".join(bloco)
+            enviar_mensagem_telegram(texto)
+            bloco = []
+
+    if bloco:
+        texto = "\n".join(bloco)
+        enviar_mensagem_telegram(texto)
+
+    enviar_mensagem_telegram("✅ <b>Carga inicial completa finalizada!</b> A partir de amanhã, você só receberá as novas promoções.")
+
+def enviar_resumo_diario_telegram():
+    """A partir de amanhã: dispara apenas as ofertas publicadas nas últimas 24h."""
+    coletar_promocoes()
+    
+    db = SessionLocal()
+    limite = datetime.utcnow() - timedelta(hours=24)
+    novas = (
+        db.query(Promocao)
+        .filter((Promocao.data_criacao >= limite) | (Promocao.data_criacao.is_(None)))
+        .order_by(Promocao.id.desc())
+        .all()
+    )
+    db.close()
+
+    if not novas:
+        return
+
+    texto = "☀️ <b>BOM DIA! NOVAS PROMOÇÕES DO DIA</b> ✈️\n\n"
+    texto += f"Foram encontradas <b>{len(novas)}</b> novas oportunidades nas últimas 24h:\n\n"
+
+    bloco = [texto]
+    for item in novas:
+        linha = f"📌 <b>{item.programa}:</b>\n{item.titulo}\n🔗 {item.link}\n\n"
+        bloco.append(linha)
+        if len(bloco) >= 8:
+            enviar_mensagem_telegram("".join(bloco))
+            bloco = []
+
+    if bloco:
+        enviar_mensagem_telegram("".join(bloco))
+
 def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
-    """Dispara um alerta imediato no Telegram sem 'Preço Destaque' e com o link direto."""
+    """Alerta imediato individual quando surge passagem barata ou bug."""
     if not TELEGRAM_TOKEN or "SEU_TOKEN" in TELEGRAM_TOKEN:
         return
 
@@ -35,7 +111,7 @@ def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
             resp = requests.post(url_api, data=payload, timeout=10)
             if resp.status_code == 200:
                 return
-        
+
         url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
         payload = {
             "chat_id": TELEGRAM_CHAT_ID,
@@ -46,46 +122,6 @@ def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
         requests.post(url_api, data=payload, timeout=10)
     except Exception as e:
         print(f"[TELEGRAM ERRO]: {e}")
-
-def enviar_resumo_diario_telegram():
-    """Coleta novos posts e dispara o resumo matinal no Telegram com links diretos."""
-    coletar_promocoes()
-    
-    db = SessionLocal()
-    limite = datetime.utcnow() - timedelta(hours=24)
-    novas = (
-        db.query(Promocao)
-        .filter((Promocao.data_criacao >= limite) | (Promocao.data_criacao.is_(None)))
-        .order_by(Promocao.id.desc())
-        .limit(8)
-        .all()
-    )
-    db.close()
-
-    if not novas:
-        return
-
-    texto = "☀️ <b>BOM DIA! RADAR DE MILHAS E PROMOÇÕES</b> ✈️\n\n"
-    texto += "Confira os melhores destaques encontrados nas últimas horas:\n\n"
-
-    for item in novas:
-        icone = "🔥" if item.vale_a_pena else "📌"
-        texto += f"{icone} <b>{item.programa}:</b>\n{item.titulo}\n🔗 {item.link}\n\n"
-
-    texto += "💡 <i>Tarifas promocionais e passagens podem mudar a qualquer momento!</i>"
-
-    try:
-        url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-        payload = {
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": texto,
-            "parse_mode": "HTML",
-            "disable_web_page_preview": True
-        }
-        requests.post(url_api, data=payload, timeout=10)
-        print("[TELEGRAM] Resumo diário enviado com sucesso!")
-    except Exception as e:
-        print(f"[TELEGRAM ERRO RESUMO]: {e}")
 
 IMAGENS_PADRAO = {
     "Livelo": "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=600&auto=format&fit=crop&q=80",
@@ -98,7 +134,6 @@ IMAGENS_PADRAO = {
 }
 
 def avaliar_oferta(titulo):
-    """Analisa se o título se trata de passagem aérea barata ou erro tarifário."""
     t = titulo.lower()
     vale = False
     preco_str = None
@@ -139,7 +174,6 @@ def avaliar_oferta(titulo):
     return (vale and eh_passagem), preco_str
 
 def extrair_imagem(entry, headers, programa):
-    """Extrai a melhor imagem disponível para a promoção."""
     if "media_content" in entry and len(entry.media_content) > 0:
         url = entry.media_content[0].get("url")
         if url:
@@ -178,7 +212,6 @@ def extrair_imagem(entry, headers, programa):
     return IMAGENS_PADRAO.get(programa, IMAGENS_PADRAO["Geral"])
 
 def coletar_promocoes():
-    """Varre os feeds RSS e armazena as novas promoções no banco com timestamp atual."""
     db = SessionLocal()
 
     urls = [
@@ -258,4 +291,3 @@ def coletar_promocoes():
             continue
 
     db.close()
-    
