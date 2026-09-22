@@ -1,4 +1,5 @@
 import re
+import time
 from datetime import datetime, timedelta
 import feedparser
 import requests
@@ -12,55 +13,67 @@ from database import SessionLocal, Promocao
 TELEGRAM_TOKEN = "8946417053:AAHxzBiHG6glT6b8he23gjNgdasKmFY2EVA"
 TELEGRAM_CHAT_ID = "8655754996"
 
-def enviar_mensagem_telegram(texto):
-    """Envia uma mensagem de texto via Telegram API."""
+IMAGENS_PADRAO = {
+    "Livelo": "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=600&auto=format&fit=crop&q=80",
+    "Smiles": "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&auto=format&fit=crop&q=80",
+    "LATAM Pass": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&auto=format&fit=crop&q=80",
+    "Azul": "https://images.unsplash.com/photo-1508873696983-2df5703bc375?w=600&auto=format&fit=crop&q=80",
+    "Esfera": "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=600&auto=format&fit=crop&q=80",
+    "Premmia": "https://images.unsplash.com/photo-1527018607636-06b29f074a3f?w=600&auto=format&fit=crop&q=80",
+    "Geral": "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&auto=format&fit=crop&q=80"
+}
+
+def enviar_card_com_foto(titulo, link, programa=None, imagem=None, eh_alerta=False):
+    """Envia uma promoção como um card individual com foto em destaque."""
     if not TELEGRAM_TOKEN or "SEU_TOKEN" in TELEGRAM_TOKEN:
         return
+
+    if eh_alerta:
+        cabecalho = "🚨 <b>ALERTA DE PASSAGEM / TARIFA!</b> ✈️\n\n"
+    else:
+        cabecalho = f"📌 <b>{programa or 'Promoção'}:</b>\n"
+
+    texto = (
+        f"{cabecalho}"
+        f"<b>{titulo}</b>\n\n"
+        f"🔗 {link}"
+    )
+
+    url_img = imagem or IMAGENS_PADRAO.get(programa, IMAGENS_PADRAO["Geral"])
+
     try:
+        if url_img and url_img.startswith("http"):
+            url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
+            payload = {
+                "chat_id": TELEGRAM_CHAT_ID,
+                "photo": url_img,
+                "caption": texto,
+                "parse_mode": "HTML"
+            }
+            resp = requests.post(url_api, data=payload, timeout=10)
+            if resp.status_code == 200:
+                return
+
+        # Fallback para mensagem de texto caso a imagem falhe
         url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
         payload = {
             "chat_id": TELEGRAM_CHAT_ID,
             "text": texto,
             "parse_mode": "HTML",
-            "disable_web_page_preview": True
+            "disable_web_page_preview": False
         }
         requests.post(url_api, data=payload, timeout=10)
     except Exception as e:
         print(f"[TELEGRAM ERRO]: {e}")
 
-def enviar_todas_promocoes_hoje():
-    """Coleta e dispara absolutamente TODAS as promoções do banco divididas em blocos."""
-    coletar_promocoes()
-    
-    db = SessionLocal()
-    todas = db.query(Promocao).order_by(Promocao.id.desc()).all()
-    db.close()
-
-    if not todas:
-        enviar_mensagem_telegram("Nenhuma promoção encontrada no banco no momento.")
-        return
-
-    enviar_mensagem_telegram(f"📦 <b>INVENTÁRIO COMPLETO DE PROMOÇÕES</b>\nEnviando todas as {len(todas)} ofertas cadastradas...")
-
-    # Divide em blocos de 8 para não estourar o limite de 4096 caracteres do Telegram
-    bloco = []
-    for item in todas:
-        bloco.append(f"📌 <b>{item.programa}:</b>\n{item.titulo}\n🔗 {item.link}\n")
-        if len(bloco) == 8:
-            texto = "\n".join(bloco)
-            enviar_mensagem_telegram(texto)
-            bloco = []
-
-    if bloco:
-        texto = "\n".join(bloco)
-        enviar_mensagem_telegram(texto)
-
-    enviar_mensagem_telegram("✅ <b>Carga inicial completa finalizada!</b> A partir de amanhã, você só receberá as novas promoções.")
+def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
+    """Dispara o alerta imediato quando surge oportunidade imperdível."""
+    enviar_card_com_foto(titulo, link, imagem=imagem, eh_alerta=True)
 
 def enviar_resumo_diario_telegram():
-    """A partir de amanhã: dispara apenas as ofertas publicadas nas últimas 24h."""
+    """Envia individualmente com foto todas as novidades das últimas 24 horas."""
     coletar_promocoes()
-    
+
     db = SessionLocal()
     limite = datetime.utcnow() - timedelta(hours=24)
     novas = (
@@ -74,64 +87,48 @@ def enviar_resumo_diario_telegram():
     if not novas:
         return
 
-    texto = "☀️ <b>BOM DIA! NOVAS PROMOÇÕES DO DIA</b> ✈️\n\n"
-    texto += f"Foram encontradas <b>{len(novas)}</b> novas oportunidades nas últimas 24h:\n\n"
+    # Mensagem de abertura matinal
+    try:
+        url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        requests.post(url_api, data={
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": f"☀️ <b>BOM DIA! RADAR DE MILHAS E PROMOÇÕES</b> ✈️\n\nConfira abaixo as <b>{len(novas)}</b> novidades encontradas nas últimas 24h:",
+            "parse_mode": "HTML"
+        }, timeout=10)
+    except Exception:
+        pass
 
-    bloco = [texto]
+    # Dispara cada promoção com foto
     for item in novas:
-        linha = f"📌 <b>{item.programa}:</b>\n{item.titulo}\n🔗 {item.link}\n\n"
-        bloco.append(linha)
-        if len(bloco) >= 8:
-            enviar_mensagem_telegram("".join(bloco))
-            bloco = []
+        enviar_card_com_foto(
+            titulo=item.titulo,
+            link=item.link,
+            programa=item.programa,
+            imagem=item.imagem,
+            eh_alerta=False
+        )
+        time.sleep(0.8)  # Pequeno intervalo para respeitar o limite de taxa do Telegram
 
-    if bloco:
-        enviar_mensagem_telegram("".join(bloco))
+def enviar_todas_promocoes_hoje():
+    """Dispara individualmente com foto todas as ofertas cadastradas no banco."""
+    coletar_promocoes()
 
-def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
-    """Alerta imediato individual quando surge passagem barata ou bug."""
-    if not TELEGRAM_TOKEN or "SEU_TOKEN" in TELEGRAM_TOKEN:
+    db = SessionLocal()
+    todas = db.query(Promocao).order_by(Promocao.id.desc()).all()
+    db.close()
+
+    if not todas:
         return
 
-    texto = (
-        f"🚨 <b>ALERTA DE PASSAGEM / TARIFA!</b> ✈️\n\n"
-        f"📌 <b>{titulo}</b>\n\n"
-        f"🔗 {link}"
-    )
-
-    try:
-        if imagem and imagem.startswith("http"):
-            url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
-            payload = {
-                "chat_id": TELEGRAM_CHAT_ID,
-                "photo": imagem,
-                "caption": texto,
-                "parse_mode": "HTML"
-            }
-            resp = requests.post(url_api, data=payload, timeout=10)
-            if resp.status_code == 200:
-                return
-
-        url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-        payload = {
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": texto,
-            "parse_mode": "HTML",
-            "disable_web_page_preview": False
-        }
-        requests.post(url_api, data=payload, timeout=10)
-    except Exception as e:
-        print(f"[TELEGRAM ERRO]: {e}")
-
-IMAGENS_PADRAO = {
-    "Livelo": "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=600&auto=format&fit=crop&q=80",
-    "Smiles": "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&auto=format&fit=crop&q=80",
-    "LATAM Pass": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&auto=format&fit=crop&q=80",
-    "Azul": "https://images.unsplash.com/photo-1508873696983-2df5703bc375?w=600&auto=format&fit=crop&q=80",
-    "Esfera": "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=600&auto=format&fit=crop&q=80",
-    "Premmia": "https://images.unsplash.com/photo-1527018607636-06b29f074a3f?w=600&auto=format&fit=crop&q=80",
-    "Geral": "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&auto=format&fit=crop&q=80"
-}
+    for item in todas:
+        enviar_card_com_foto(
+            titulo=item.titulo,
+            link=item.link,
+            programa=item.programa,
+            imagem=item.imagem,
+            eh_alerta=False
+        )
+        time.sleep(0.8)
 
 def avaliar_oferta(titulo):
     t = titulo.lower()
@@ -291,3 +288,4 @@ def coletar_promocoes():
             continue
 
     db.close()
+    
