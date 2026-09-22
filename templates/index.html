@@ -1,226 +1,80 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RadarMilhas - Promoções e Programas</title>
+    <title>Radar de Milhas e Promoções</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
-
-    <!-- Overlay escuro do menu -->
-    <div id="drawer-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 hidden transition-opacity" onclick="toggleMenu()"></div>
-
-    <!-- Menu Lateral -->
-    <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-white border-r border-slate-200 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-2xl">
-        <div class="h-16 px-5 border-b border-slate-100 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <i class="fa-solid fa-plane-departure text-blue-600 text-xl"></i>
-                <span class="font-extrabold text-lg text-slate-900 tracking-tight">Radar<span class="text-blue-600">Milhas</span></span>
-            </div>
-            <button onclick="toggleMenu()" class="p-2 rounded-lg text-slate-400 hover:bg-slate-100 transition">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-        </div>
-
-        <div class="p-4 flex-1 overflow-y-auto space-y-6">
-            <div>
-                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">Navegação</p>
-                <div class="space-y-1">
-                    <a href="/" class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-blue-50 text-blue-700 font-semibold text-sm transition">
-                        <i class="fa-solid fa-fire text-amber-500 w-4 text-center"></i>
-                        <span>Todas as Promoções</span>
-                    </a>
-                    <a href="/passagens" class="flex items-center justify-between px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-100 font-medium text-sm transition">
-                        <span class="flex items-center gap-3">
-                            <i class="fa-solid fa-ticket text-blue-600 w-4 text-center"></i>
-                            <span>Comparador de Voos</span>
-                        </span>
-                        <span class="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">NOVO</span>
-                    </a>
-                </div>
-            </div>
-
-            <div>
-                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">Sites Oficiais</p>
-                <div class="space-y-1">
-                    <a href="https://www.livelo.com.br/compre-e-pontue" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition">
-                        <span class="flex items-center gap-2.5"><i class="fa-solid fa-gem text-pink-600 w-4 text-center"></i> Livelo</span>
-                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i>
-                    </a>
-                    <a href="https://www.esfera.com.vc/promocoes" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition">
-                        <span class="flex items-center gap-2.5"><i class="fa-solid fa-circle-notch text-red-600 w-4 text-center"></i> Esfera</span>
-                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i>
-                    </a>
-                    <a href="https://www.smiles.com.br/promocoes" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition">
-                        <span class="flex items-center gap-2.5"><i class="fa-solid fa-plane text-orange-500 w-4 text-center"></i> Smiles</span>
-                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i>
-                    </a>
-                    <a href="https://latampass.latam.com/pt_br/promocoes" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition">
-                        <span class="flex items-center gap-2.5"><i class="fa-solid fa-plane text-indigo-700 w-4 text-center"></i> LATAM Pass</span>
-                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i>
-                    </a>
-                    <a href="https://www.voeazul.com.br/br/pt/programa-fidelidade/promocoes.html" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition">
-                        <span class="flex items-center gap-2.5"><i class="fa-solid fa-plane text-sky-500 w-4 text-center"></i> Azul</span>
-                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="p-4 border-t border-slate-100 bg-slate-50/50">
-            <a href="/atualizar" class="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm py-2.5 rounded-xl shadow-sm transition">
-                <i class="fa-solid fa-arrows-rotate"></i>
-                <span>Atualizar Ofertas</span>
-            </a>
-        </div>
-    </aside>
-
-    <!-- Topbar -->
+<body class="bg-slate-50 min-h-screen text-slate-800 antialiased">
+    <!-- Navbar -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <button onclick="toggleMenu()" class="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 transition">
-                    <i class="fa-solid fa-bars text-lg"></i>
-                </button>
-                <a href="/" class="flex items-center gap-2">
-                    <i class="fa-solid fa-plane-departure text-blue-600 text-2xl"></i>
-                    <span class="font-extrabold text-xl text-slate-900 tracking-tight">Radar<span class="text-blue-600">Milhas</span></span>
-                </a>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-600 flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid fa-fire text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black tracking-tight text-slate-900">Radar<span class="text-rose-600">Milhas</span></h1>
+                    <p class="text-xs text-slate-500 font-medium">Monitoramento em tempo real de programas e cartões</p>
+                </div>
             </div>
             
-            <a href="/atualizar" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition">
-                <i class="fa-solid fa-arrows-rotate"></i>
-                <span class="hidden sm:inline">Atualizar Ofertas</span>
+            <a href="/atualizar" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                <i class="fa-solid fa-rotate"></i> Atualizar Feeds
             </a>
         </div>
     </header>
 
-    <!-- Barra de Filtros com Badges Estilo WhatsApp -->
-    <nav class="bg-white border-b border-slate-200 py-3">
-        <div class="max-w-7xl mx-auto px-4 flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
-            
-            <!-- Todos -->
-            <a href="/" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if not programa_ativo %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
-                <span>Todos</span>
-                {% if novos is defined and novos and novos.get('Todos', 0) > 0 %}
-                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-emerald-500 rounded-full">
-                    {{ novos.get('Todos') }}
-                </span>
-                {% endif %}
-            </a>
-
-            <!-- Livelo -->
-            <a href="/?programa=Livelo" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Livelo' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
-                <span>Livelo</span>
-                {% if novos is defined and novos and novos.get('Livelo', 0) > 0 %}
-                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
-                    {{ novos.get('Livelo') }}
-                </span>
-                {% endif %}
-            </a>
-
-            <!-- Esfera -->
-            <a href="/?programa=Esfera" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Esfera' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
-                <span>Esfera</span>
-                {% if novos is defined and novos and novos.get('Esfera', 0) > 0 %}
-                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
-                    {{ novos.get('Esfera') }}
-                </span>
-                {% endif %}
-            </a>
-
-            <!-- Smiles -->
-            <a href="/?programa=Smiles" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Smiles' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
-                <span>Smiles</span>
-                {% if novos is defined and novos and novos.get('Smiles', 0) > 0 %}
-                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
-                    {{ novos.get('Smiles') }}
-                </span>
-                {% endif %}
-            </a>
-
-            <!-- LATAM Pass -->
-            <a href="/?programa=LATAM Pass" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'LATAM Pass' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
-                <span>LATAM Pass</span>
-                {% if novos is defined and novos and novos.get('LATAM Pass', 0) > 0 %}
-                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
-                    {{ novos.get('LATAM Pass') }}
-                </span>
-                {% endif %}
-            </a>
-
-            <!-- Azul -->
-            <a href="/?programa=Azul" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Azul' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
-                <span>Azul</span>
-                {% if novos is defined and novos and novos.get('Azul', 0) > 0 %}
-                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
-                    {{ novos.get('Azul') }}
-                </span>
-                {% endif %}
-            </a>
-
-            <!-- Premmia -->
-            <a href="/?programa=Premmia" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Premmia' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
-                <span>Premmia</span>
-                {% if novos is defined and novos and novos.get('Premmia', 0) > 0 %}
-                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
-                    {{ novos.get('Premmia') }}
-                </span>
-                {% endif %}
-            </a>
-
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Barra de Programas de Fidelidade -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-4 mb-6 border-b border-slate-200 text-sm scrollbar-none">
+            {% set programas = ["Todos", "Smiles", "Livelo", "Esfera", "LATAM Pass", "Azul", "Premmia"] %}
+            {% for prog in programas %}
+                {% set ativo = (programa_ativo == prog) or (prog == 'Todos' and not programa_ativo) %}
+                <a href="{% if prog == 'Todos' %}/{% else %}?programa={{ prog }}{% endif %}"
+                   class="px-4 py-2 rounded-xl font-bold whitespace-nowrap transition flex items-center gap-2 {% if ativo %}bg-slate-900 text-white shadow-sm{% else %}bg-white text-slate-600 hover:bg-slate-100 border border-slate-200{% endif %}">
+                    {{ prog }}
+                    {% if novos.get(prog, 0) > 0 %}
+                        <span class="px-2 py-0.5 text-[10px] rounded-full {% if ativo %}bg-rose-500 text-white{% else %}bg-rose-100 text-rose-700 font-extrabold{% endif %}">
+                            +{{ novos.get(prog) }}
+                        </span>
+                    {% endif %}
+                </a>
+            {% endfor %}
         </div>
-    </nav>
 
-    <!-- Lista de Cards -->
-    <main class="max-w-7xl mx-auto px-4 py-8 flex-1 w-full">
-        {% if promocoes %}
+        <!-- Grade de Promoções -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {% for item in promocoes %}
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition">
-                <div class="relative h-44 bg-slate-100 overflow-hidden">
-                    <img src="{{ item.imagem }}" alt="{{ item.titulo }}" class="w-full h-full object-cover">
-                    <span class="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-sm">
-                        {{ item.programa }}
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition overflow-hidden flex flex-col group">
+                <div class="relative h-44 overflow-hidden bg-slate-100">
+                    <img src="{{ item.imagem }}" alt="{{ item.titulo }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                    <span class="absolute top-3 left-3 px-2.5 py-1 text-[11px] font-bold tracking-wider uppercase rounded-lg bg-black/70 text-white backdrop-blur-sm">
+                        {{ item.programa or 'Geral' }}
                     </span>
+                    {% if item.vale_a_pena %}
+                    <span class="absolute top-3 right-3 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-500 text-white shadow-sm flex items-center gap-1">
+                        <i class="fa-solid fa-bolt text-[10px]"></i> Destaque
+                    </span>
+                    {% endif %}
                 </div>
+
                 <div class="p-4 flex flex-col flex-1 justify-between">
-                    <h2 class="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 hover:text-blue-600">
-                        <a href="{{ item.link }}" target="_blank">{{ item.titulo }}</a>
+                    <h2 class="text-sm font-bold text-slate-900 line-clamp-3 leading-snug group-hover:text-rose-600 transition">
+                        {{ item.titulo }}
                     </h2>
-                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-                        <span>Recente</span>
-                        <a href="{{ item.link }}" target="_blank" class="inline-flex items-center gap-1.5 font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition">
-                            Ver Oferta <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                    
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <a href="{{ item.link }}" target="_blank" class="w-full text-center py-2 px-3 text-xs font-bold rounded-lg bg-slate-100 text-slate-800 hover:bg-slate-900 hover:text-white transition flex items-center justify-center gap-1.5">
+                            Acessar Notícia <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
                         </a>
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
-        {% else %}
-        <div class="text-center py-20 bg-white rounded-2xl border border-slate-200">
-            <i class="fa-solid fa-folder-open text-slate-300 text-5xl mb-3"></i>
-            <h3 class="text-lg font-bold text-slate-800">Nenhuma promoção encontrada</h3>
-            <p class="text-slate-500 text-sm mt-1">Carregue novas ofertas pelo botão no topo.</p>
-        </div>
-        {% endif %}
     </main>
-
-    <script>
-        function toggleMenu() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('drawer-overlay');
-            if (sidebar.classList.contains('-translate-x-full')) {
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
-            } else {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-            }
-        }
-    </script>
 </body>
 </html>
