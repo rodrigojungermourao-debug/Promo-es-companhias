@@ -24,7 +24,6 @@ class Promocao(Base):
 
 Base.metadata.create_all(bind=engine)
 
-# Garante que a coluna data_criacao exista mesmo numa base de dados SQLite já criada
 try:
     with engine.connect() as conn:
         conn.execute(text("ALTER TABLE promocoes ADD COLUMN data_criacao DATETIME"))

@@ -7,24 +7,21 @@ from sqlalchemy.exc import IntegrityError
 from database import SessionLocal, Promocao
 
 # ==========================================
-# INSIRA OS DADOS DO SEU BOT TELEGRAM AQUI
+# CREDENCIAIS CONFIGURADAS DO TELEGRAM
 # ==========================================
 TELEGRAM_TOKEN = "8946417053:AAHxzBiHG6glT6b8he23gjNgdasKmFY2EVA"
 TELEGRAM_CHAT_ID = "8655754996"
 
 def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
-    """Dispara um alerta imediato no Telegram quando surge uma oferta imperdível."""
+    """Dispara um alerta imediato no Telegram sem 'Preço Destaque' e com o link direto."""
     if not TELEGRAM_TOKEN or "SEU_TOKEN" in TELEGRAM_TOKEN:
         return
 
     texto = (
         f"🚨 <b>ALERTA DE PASSAGEM / TARIFA!</b> ✈️\n\n"
-        f"📌 <b>{titulo}</b>\n"
+        f"📌 <b>{titulo}</b>\n\n"
+        f"🔗 {link}"
     )
-    if preco_destaque:
-        texto += f"💰 <b>Preço Destaque:</b> {preco_destaque}\n"
-        
-    texto += f"\n🔗 <a href='{link}'>Clique aqui para ver a passagem</a>"
 
     try:
         if imagem and imagem.startswith("http"):
@@ -39,7 +36,6 @@ def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
             if resp.status_code == 200:
                 return
         
-        # Envio em texto simples caso a imagem falhe
         url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
         payload = {
             "chat_id": TELEGRAM_CHAT_ID,
@@ -52,7 +48,7 @@ def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
         print(f"[TELEGRAM ERRO]: {e}")
 
 def enviar_resumo_diario_telegram():
-    """Coleta novos posts e dispara o resumo matinal no Telegram com as novidades das últimas 24h."""
+    """Coleta novos posts e dispara o resumo matinal no Telegram com links diretos."""
     coletar_promocoes()
     
     db = SessionLocal()
@@ -74,8 +70,7 @@ def enviar_resumo_diario_telegram():
 
     for item in novas:
         icone = "🔥" if item.vale_a_pena else "📌"
-        preco = f" ({item.preco_destaque})" if item.preco_destaque else ""
-        texto += f"{icone} <b>{item.programa}:</b> <a href='{item.link}'>{item.titulo}</a>{preco}\n\n"
+        texto += f"{icone} <b>{item.programa}:</b>\n{item.titulo}\n🔗 {item.link}\n\n"
 
     texto += "💡 <i>Tarifas promocionais e passagens podem mudar a qualquer momento!</i>"
 
@@ -250,7 +245,6 @@ def coletar_promocoes():
                         db.add(nova)
                         db.commit()
 
-                        # Se for uma passagem muito barata / bug, alerta na hora no Telegram
                         if vale_a_pena:
                             enviar_alerta_telegram(titulo, link, preco_destaque, imagem)
 
@@ -264,3 +258,4 @@ def coletar_promocoes():
             continue
 
     db.close()
+    
