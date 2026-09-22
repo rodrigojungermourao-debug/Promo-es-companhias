@@ -1,15 +1,19 @@
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import feedparser
 import requests
 from bs4 import BeautifulSoup
 from sqlalchemy.exc import IntegrityError
 from database import SessionLocal, Promocao
 
-TELEGRAM_TOKEN = "SEU_TOKEN_DO_BOTFATHER_AQUI"
-TELEGRAM_CHAT_ID = "SEU_CHAT_ID_AQUI"
+# ==========================================
+# INSIRA OS DADOS DO SEU BOT TELEGRAM AQUI
+# ==========================================
+TELEGRAM_TOKEN = "8946417053:AAHxzBiHG6glT6b8he23gjNgdasKmFY2EVA"
+TELEGRAM_CHAT_ID = "8655754996"
 
 def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
+    """Dispara um alerta imediato no Telegram quando surge uma oferta imperdível."""
     if not TELEGRAM_TOKEN or "SEU_TOKEN" in TELEGRAM_TOKEN:
         return
 
@@ -35,6 +39,7 @@ def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
             if resp.status_code == 200:
                 return
         
+        # Envio em texto simples caso a imagem falhe
         url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
         payload = {
             "chat_id": TELEGRAM_CHAT_ID,
@@ -46,6 +51,46 @@ def enviar_alerta_telegram(titulo, link, preco_destaque=None, imagem=None):
     except Exception as e:
         print(f"[TELEGRAM ERRO]: {e}")
 
+def enviar_resumo_diario_telegram():
+    """Coleta novos posts e dispara o resumo matinal no Telegram com as novidades das últimas 24h."""
+    coletar_promocoes()
+    
+    db = SessionLocal()
+    limite = datetime.utcnow() - timedelta(hours=24)
+    novas = (
+        db.query(Promocao)
+        .filter((Promocao.data_criacao >= limite) | (Promocao.data_criacao.is_(None)))
+        .order_by(Promocao.id.desc())
+        .limit(8)
+        .all()
+    )
+    db.close()
+
+    if not novas:
+        return
+
+    texto = "☀️ <b>BOM DIA! RADAR DE MILHAS E PROMOÇÕES</b> ✈️\n\n"
+    texto += "Confira os melhores destaques encontrados nas últimas horas:\n\n"
+
+    for item in novas:
+        icone = "🔥" if item.vale_a_pena else "📌"
+        preco = f" ({item.preco_destaque})" if item.preco_destaque else ""
+        texto += f"{icone} <b>{item.programa}:</b> <a href='{item.link}'>{item.titulo}</a>{preco}\n\n"
+
+    texto += "💡 <i>Tarifas promocionais e passagens podem mudar a qualquer momento!</i>"
+
+    try:
+        url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": texto,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True
+        }
+        requests.post(url_api, data=payload, timeout=10)
+        print("[TELEGRAM] Resumo diário enviado com sucesso!")
+    except Exception as e:
+        print(f"[TELEGRAM ERRO RESUMO]: {e}")
 
 IMAGENS_PADRAO = {
     "Livelo": "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=600&auto=format&fit=crop&q=80",
@@ -58,6 +103,7 @@ IMAGENS_PADRAO = {
 }
 
 def avaliar_oferta(titulo):
+    """Analisa se o título se trata de passagem aérea barata ou erro tarifário."""
     t = titulo.lower()
     vale = False
     preco_str = None
@@ -98,6 +144,7 @@ def avaliar_oferta(titulo):
     return (vale and eh_passagem), preco_str
 
 def extrair_imagem(entry, headers, programa):
+    """Extrai a melhor imagem disponível para a promoção."""
     if "media_content" in entry and len(entry.media_content) > 0:
         url = entry.media_content[0].get("url")
         if url:
@@ -136,6 +183,7 @@ def extrair_imagem(entry, headers, programa):
     return IMAGENS_PADRAO.get(programa, IMAGENS_PADRAO["Geral"])
 
 def coletar_promocoes():
+    """Varre os feeds RSS e armazena as novas promoções no banco com timestamp atual."""
     db = SessionLocal()
 
     urls = [
@@ -202,6 +250,7 @@ def coletar_promocoes():
                         db.add(nova)
                         db.commit()
 
+                        # Se for uma passagem muito barata / bug, alerta na hora no Telegram
                         if vale_a_pena:
                             enviar_alerta_telegram(titulo, link, preco_destaque, imagem)
 
@@ -215,4 +264,3 @@ def coletar_promocoes():
             continue
 
     db.close()
-    
