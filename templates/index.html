@@ -9,6 +9,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
 
+    <!-- Overlay escuro do menu -->
     <div id="drawer-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 hidden transition-opacity" onclick="toggleMenu()"></div>
 
     <!-- Menu Lateral -->
@@ -34,7 +35,7 @@
                     <a href="/passagens" class="flex items-center justify-between px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-100 font-medium text-sm transition">
                         <span class="flex items-center gap-3">
                             <i class="fa-solid fa-ticket text-blue-600 w-4 text-center"></i>
-                            <span>Passagens (R$ & Milhas)</span>
+                            <span>Comparador de Voos</span>
                         </span>
                         <span class="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">NOVO</span>
                     </a>
@@ -42,18 +43,18 @@
             </div>
 
             <div>
-                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">Sites Oficiais das Empresas</p>
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">Sites Oficiais</p>
                 <div class="space-y-1">
                     <a href="https://www.livelo.com.br/compre-e-pontue" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition">
-                        <span class="flex items-center gap-2.5"><i class="fa-solid fa-gem text-pink-600 w-4 text-center"></i> Livelo Oficial</span>
+                        <span class="flex items-center gap-2.5"><i class="fa-solid fa-gem text-pink-600 w-4 text-center"></i> Livelo</span>
                         <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i>
                     </a>
                     <a href="https://www.esfera.com.vc/promocoes" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition">
-                        <span class="flex items-center gap-2.5"><i class="fa-solid fa-circle-notch text-red-600 w-4 text-center"></i> Esfera Oficial</span>
+                        <span class="flex items-center gap-2.5"><i class="fa-solid fa-circle-notch text-red-600 w-4 text-center"></i> Esfera</span>
                         <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i>
                     </a>
                     <a href="https://www.smiles.com.br/promocoes" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition">
-                        <span class="flex items-center gap-2.5"><i class="fa-solid fa-plane text-orange-500 w-4 text-center"></i> Smiles / GOL</span>
+                        <span class="flex items-center gap-2.5"><i class="fa-solid fa-plane text-orange-500 w-4 text-center"></i> Smiles</span>
                         <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i>
                     </a>
                     <a href="https://latampass.latam.com/pt_br/promocoes" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition">
@@ -61,11 +62,7 @@
                         <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i>
                     </a>
                     <a href="https://www.voeazul.com.br/br/pt/programa-fidelidade/promocoes.html" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition">
-                        <span class="flex items-center gap-2.5"><i class="fa-solid fa-plane text-sky-500 w-4 text-center"></i> Azul Fidelidade</span>
-                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i>
-                    </a>
-                    <a href="https://www.petrobraspremmia.com.br" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition">
-                        <span class="flex items-center gap-2.5"><i class="fa-solid fa-gas-pump text-emerald-600 w-4 text-center"></i> Premmia Oficial</span>
+                        <span class="flex items-center gap-2.5"><i class="fa-solid fa-plane text-sky-500 w-4 text-center"></i> Azul</span>
                         <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i>
                     </a>
                 </div>
@@ -75,7 +72,7 @@
         <div class="p-4 border-t border-slate-100 bg-slate-50/50">
             <a href="/atualizar" class="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm py-2.5 rounded-xl shadow-sm transition">
                 <i class="fa-solid fa-arrows-rotate"></i>
-                <span>Varredura Completa</span>
+                <span>Atualizar Ofertas</span>
             </a>
         </div>
     </aside>
@@ -100,34 +97,84 @@
         </div>
     </header>
 
-    <!-- Filtros de Programas -->
+    <!-- Barra de Filtros com Badges de Notificação Estilo WhatsApp -->
     <nav class="bg-white border-b border-slate-200 py-3">
-        <div class="max-w-7xl mx-auto px-4 flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <a href="/" class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if not programa_ativo %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
-                Todos
+        <div class="max-w-7xl mx-auto px-4 flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
+            
+            <!-- Todos -->
+            <a href="/" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if not programa_ativo %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
+                <span>Todos</span>
+                {% if novos.get('Todos', 0) > 0 %}
+                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-emerald-500 rounded-full">
+                    {{ novos['Todos'] }}
+                </span>
+                {% endif %}
             </a>
-            <a href="/?programa=Livelo" class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Livelo' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
-                Livelo
+
+            <!-- Livelo -->
+            <a href="/?programa=Livelo" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Livelo' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
+                <span>Livelo</span>
+                {% if novos.get('Livelo', 0) > 0 %}
+                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
+                    {{ novos['Livelo'] }}
+                </span>
+                {% endif %}
             </a>
-            <a href="/?programa=Esfera" class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Esfera' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
-                Esfera
+
+            <!-- Esfera -->
+            <a href="/?programa=Esfera" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Esfera' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
+                <span>Esfera</span>
+                {% if novos.get('Esfera', 0) > 0 %}
+                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
+                    {{ novos['Esfera'] }}
+                </span>
+                {% endif %}
             </a>
-            <a href="/?programa=Smiles" class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Smiles' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
-                Smiles
+
+            <!-- Smiles -->
+            <a href="/?programa=Smiles" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Smiles' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
+                <span>Smiles</span>
+                {% if novos.get('Smiles', 0) > 0 %}
+                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
+                    {{ novos['Smiles'] }}
+                </span>
+                {% endif %}
             </a>
-            <a href="/?programa=LATAM Pass" class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'LATAM Pass' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
-                LATAM Pass
+
+            <!-- LATAM Pass -->
+            <a href="/?programa=LATAM Pass" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'LATAM Pass' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
+                <span>LATAM Pass</span>
+                {% if novos.get('LATAM Pass', 0) > 0 %}
+                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
+                    {{ novos['LATAM Pass'] }}
+                </span>
+                {% endif %}
             </a>
-            <a href="/?programa=Azul" class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Azul' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
-                Azul
+
+            <!-- Azul -->
+            <a href="/?programa=Azul" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Azul' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
+                <span>Azul</span>
+                {% if novos.get('Azul', 0) > 0 %}
+                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
+                    {{ novos['Azul'] }}
+                </span>
+                {% endif %}
             </a>
-            <a href="/?programa=Premmia" class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Premmia' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
-                Premmia
+
+            <!-- Premmia -->
+            <a href="/?programa=Premmia" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Premmia' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
+                <span>Premmia</span>
+                {% if novos.get('Premmia', 0) > 0 %}
+                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
+                    {{ novos['Premmia'] }}
+                </span>
+                {% endif %}
             </a>
+
         </div>
     </nav>
 
-    <!-- Grade de Cards -->
+    <!-- Lista de Cards -->
     <main class="max-w-7xl mx-auto px-4 py-8 flex-1 w-full">
         {% if promocoes %}
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -157,7 +204,7 @@
         <div class="text-center py-20 bg-white rounded-2xl border border-slate-200">
             <i class="fa-solid fa-folder-open text-slate-300 text-5xl mb-3"></i>
             <h3 class="text-lg font-bold text-slate-800">Nenhuma promoção encontrada</h3>
-            <p class="text-slate-500 text-sm mt-1">Clique em "Atualizar Ofertas" para ler os portais.</p>
+            <p class="text-slate-500 text-sm mt-1">Carregue novas ofertas pelo botão no topo.</p>
         </div>
         {% endif %}
     </main>
