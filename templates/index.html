@@ -97,16 +97,16 @@
         </div>
     </header>
 
-    <!-- Barra de Filtros com Badges de Notificação Estilo WhatsApp -->
+    <!-- Barra de Filtros com Badges Estilo WhatsApp -->
     <nav class="bg-white border-b border-slate-200 py-3">
         <div class="max-w-7xl mx-auto px-4 flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
             
             <!-- Todos -->
             <a href="/" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if not programa_ativo %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
                 <span>Todos</span>
-                {% if novos.get('Todos', 0) > 0 %}
+                {% if novos is defined and novos and novos.get('Todos', 0) > 0 %}
                 <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-emerald-500 rounded-full">
-                    {{ novos['Todos'] }}
+                    {{ novos.get('Todos') }}
                 </span>
                 {% endif %}
             </a>
@@ -114,9 +114,9 @@
             <!-- Livelo -->
             <a href="/?programa=Livelo" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Livelo' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
                 <span>Livelo</span>
-                {% if novos.get('Livelo', 0) > 0 %}
+                {% if novos is defined and novos and novos.get('Livelo', 0) > 0 %}
                 <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
-                    {{ novos['Livelo'] }}
+                    {{ novos.get('Livelo') }}
                 </span>
                 {% endif %}
             </a>
@@ -124,9 +124,9 @@
             <!-- Esfera -->
             <a href="/?programa=Esfera" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Esfera' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
                 <span>Esfera</span>
-                {% if novos.get('Esfera', 0) > 0 %}
+                {% if novos is defined and novos and novos.get('Esfera', 0) > 0 %}
                 <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
-                    {{ novos['Esfera'] }}
+                    {{ novos.get('Esfera') }}
                 </span>
                 {% endif %}
             </a>
@@ -134,9 +134,9 @@
             <!-- Smiles -->
             <a href="/?programa=Smiles" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Smiles' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
                 <span>Smiles</span>
-                {% if novos.get('Smiles', 0) > 0 %}
+                {% if novos is defined and novos and novos.get('Smiles', 0) > 0 %}
                 <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
-                    {{ novos['Smiles'] }}
+                    {{ novos.get('Smiles') }}
                 </span>
                 {% endif %}
             </a>
@@ -144,9 +144,9 @@
             <!-- LATAM Pass -->
             <a href="/?programa=LATAM Pass" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'LATAM Pass' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
                 <span>LATAM Pass</span>
-                {% if novos.get('LATAM Pass', 0) > 0 %}
+                {% if novos is defined and novos and novos.get('LATAM Pass', 0) > 0 %}
                 <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
-                    {{ novos['LATAM Pass'] }}
+                    {{ novos.get('LATAM Pass') }}
                 </span>
                 {% endif %}
             </a>
@@ -154,9 +154,9 @@
             <!-- Azul -->
             <a href="/?programa=Azul" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Azul' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
                 <span>Azul</span>
-                {% if novos.get('Azul', 0) > 0 %}
+                {% if novos is defined and novos and novos.get('Azul', 0) > 0 %}
                 <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
-                    {{ novos['Azul'] }}
+                    {{ novos.get('Azul') }}
                 </span>
                 {% endif %}
             </a>
@@ -164,9 +164,9 @@
             <!-- Premmia -->
             <a href="/?programa=Premmia" class="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition {% if programa_ativo == 'Premmia' %}bg-slate-900 text-white shadow-sm{% else %}bg-white border border-slate-200 text-slate-700 hover:bg-slate-50{% endif %}">
                 <span>Premmia</span>
-                {% if novos.get('Premmia', 0) > 0 %}
+                {% if novos is defined and novos and novos.get('Premmia', 0) > 0 %}
                 <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black leading-none text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
-                    {{ novos['Premmia'] }}
+                    {{ novos.get('Premmia') }}
                 </span>
                 {% endif %}
             </a>

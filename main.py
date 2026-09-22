@@ -1,7 +1,9 @@
 import urllib.parse
+from datetime import datetime, timedelta
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
+from sqlalchemy import func
 from database import SessionLocal, Promocao
 import scraper
 
@@ -34,12 +36,8 @@ def obter_codigo_iata(texto):
     for chave, iata in AEROPORTOS_IATA.items():
         if chave in t:
             return iata
-    apenas_letras = "".join([c for c in t if c.isalpha()])
-    return apenas_letras[:3].upper() if len(apenas_letras) >= 3 else "RIO"
-
-def limpar_nome_cidade(texto):
-    # Remove repetições como "(RIO)" se o usuário já digitou isso
-    return texto.replace("(RIO)", "").replace("(FOR)", "").replace("(SAO)", "").strip()
+    letras = "".join([c for c in t if c.isalpha()])
+    return letras[:3].upper() if len(letras) >= 3 else "RIO"
 
 @app.get("/")
 def index(request: Request, programa: str = None):
@@ -47,6 +45,27 @@ def index(request: Request, programa: str = None):
     total = db.query(Promocao).count()
     if total == 0:
         scraper.coletar_promocoes()
+
+    novos = {
+        "Todos": 0, "Livelo": 0, "Esfera": 0, 
+        "Smiles": 0, "LATAM Pass": 0, "Azul": 0, "Premmia": 0
+    }
+
+    try:
+        limite_novas = datetime.utcnow() - timedelta(hours=24)
+        contagens = (
+            db.query(Promocao.programa, func.count(Promocao.id))
+            .filter((Promocao.data_criacao >= limite_novas) | (Promocao.data_criacao.is_(None)))
+            .group_by(Promocao.programa)
+            .all()
+        )
+        for prog, total_qtd in contagens:
+            if prog:
+                novos[prog] = total_qtd
+        novos["Todos"] = sum(v for k, v in novos.items() if k != "Todos")
+    except Exception as e:
+        print(f"[ERRO CONTADORES]: {e}")
+        db.rollback()
 
     query = db.query(Promocao)
     if programa:
@@ -58,7 +77,11 @@ def index(request: Request, programa: str = None):
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={"promocoes": promocoes, "programa_ativo": programa}
+        context={
+            "promocoes": promocoes,
+            "programa_ativo": programa,
+            "novos": novos
+        }
     )
 
 @app.get("/passagens")
@@ -77,8 +100,8 @@ def tela_passagens(request: Request):
 
 @app.get("/passagens/buscar")
 def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida: str = "", data_volta: str = ""):
-    origem_clean = limpar_nome_cidade(origem)
-    destino_clean = limpar_nome_cidade(destino)
+    origem_clean = origem.replace("(RIO)", "").strip()
+    destino_clean = destino.replace("(FOR)", "").strip()
     
     orig_iata = obter_codigo_iata(origem_clean)
     dest_iata = obter_codigo_iata(destino_clean)
