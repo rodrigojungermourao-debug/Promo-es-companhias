@@ -1,13 +1,37 @@
 import urllib.parse
 from datetime import datetime, timedelta
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from sqlalchemy import func
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+
 from database import SessionLocal, Promocao
 import scraper
 
-app = FastAPI()
+scheduler = AsyncIOScheduler()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Roda a busca em background a cada 30 minutos
+    scheduler.add_job(scraper.coletar_promocoes, "interval", minutes=30)
+    
+    # Envia o resumo matinal no Telegram todos os dias às 08:30 da manhã
+    scheduler.add_job(
+        scraper.enviar_resumo_diario_telegram,
+        CronTrigger(hour=8, minute=30)
+    )
+    
+    scheduler.start()
+    print("[SCHEDULER] Agendador de tarefas em segundo plano iniciado com sucesso!")
+    
+    yield
+    
+    scheduler.shutdown()
+
+app = FastAPI(lifespan=lifespan)
 templates = Jinja2Templates(directory="templates")
 
 AEROPORTOS_IATA = {
@@ -127,6 +151,11 @@ def buscar_voos(request: Request, origem: str = "", destino: str = "", data_ida:
             "link_gf": link_google_flights
         }
     )
+
+@app.get("/testar-resumo")
+def testar_resumo(background_tasks: BackgroundTasks):
+    background_tasks.add_task(scraper.enviar_resumo_diario_telegram)
+    return {"mensagem": "Disparo do resumo diario acionado em segundo plano!"}
 
 @app.get("/atualizar")
 def atualizar(background_tasks: BackgroundTasks):
